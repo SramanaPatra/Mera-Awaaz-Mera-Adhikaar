@@ -101,6 +101,54 @@ export default function StitchAdminPortal({ setActiveTab, user, onLogout }) {
         </div>
       </div>
 
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-8">
+        <div className="glass-panel p-6 rounded-xl border border-white/40 space-y-4 shadow-md">
+          <h3 className="font-headline-md text-sm font-black text-white uppercase text-glow-sm flex items-center gap-2">
+            <span className="material-symbols-outlined text-secondary-container">bar_chart</span>
+            Monthly Resolution Velocity (2026)
+          </h3>
+          <div className="h-40 flex items-end justify-between gap-3 pt-4 border-b border-white/30 px-2 font-mono text-xs text-white font-bold">
+            {[
+              { m: 'JAN', val: 65 },
+              { m: 'FEB', val: 78 },
+              { m: 'MAR', val: 92 },
+              { m: 'APR', val: 85 },
+              { m: 'MAY', val: 96 }
+            ].map((item, idx) => (
+              <div key={idx} className="flex-1 flex flex-col items-center gap-2 h-full justify-end">
+                <div 
+                  className="w-full bg-secondary-container rounded-t transition-all duration-700 shadow"
+                  style={{ height: `${item.val}%` }}
+                ></div>
+                <span className="text-glow-sm font-black">{item.m}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        <div className="glass-panel p-6 rounded-xl border border-white/40 space-y-4 shadow-md">
+          <h3 className="font-headline-md text-sm font-black text-white uppercase text-glow-sm flex items-center gap-2">
+            <span className="material-symbols-outlined text-secondary-container">map</span>
+            Ward-wise Grievance Density Heatmap
+          </h3>
+          <div className="grid grid-cols-3 gap-3 pt-2 font-mono text-xs text-slate-900 font-black">
+            {[
+              { ward: 'Ward 1 - Central', count: '14 Active', status: 'bg-emerald-300' },
+              { ward: 'Ward 2 - Metro', count: '29 High', status: 'bg-amber-300' },
+              { ward: 'Ward 3 - East', count: '08 Low', status: 'bg-emerald-300' },
+              { ward: 'Ward 4 - North', count: '42 Urgent', status: 'bg-red-400 text-white' },
+              { ward: 'Ward 5 - South', count: '19 Active', status: 'bg-amber-300' },
+              { ward: 'Ward 6 - West', count: '04 Low', status: 'bg-emerald-300' }
+            ].map((w, idx) => (
+              <div key={idx} className={`p-3 rounded-lg ${w.status} shadow flex flex-col justify-between`}>
+                <span className="block text-[11px] font-black">{w.ward}</span>
+                <span className="block text-[10px] font-bold opacity-90 mt-1">{w.count}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </div>
+
       <div className="glass-panel rounded-xl p-8 accent-glow border border-white/40">
         <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-6 gap-4 border-b border-white/30 pb-4">
           <h2 className="font-headline-md text-xl font-black text-white text-glow-sm">MUNICIPAL GRIEVANCE AUDIT QUEUE</h2>

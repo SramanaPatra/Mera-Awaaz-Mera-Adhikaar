@@ -1,0 +1,21 @@
+{
+  "short_name": "Adhikar",
+  "name": "Mera Awaaz Mera Adhikar",
+  "icons": [
+    {
+      "src": "/profile-shield-emblem.jpg",
+      "type": "image/jpeg",
+      "sizes": "192x192"
+    },
+    {
+      "src": "/profile-shield-emblem.jpg",
+      "type": "image/jpeg",
+      "sizes": "512x512"
+    }
+  ],
+  "start_url": "/",
+  "background_color": "#140a1e",
+  "theme_color": "#fcde67",
+  "display": "standalone",
+  "orientation": "portrait"
+}

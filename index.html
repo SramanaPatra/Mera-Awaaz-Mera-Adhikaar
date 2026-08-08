@@ -5,6 +5,8 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Citizen Dashboard - Mera Awaaz Mera Adhikar</title>
     <meta name="description" content="AI-driven civic welfare recommendation engine, anonymous issue reporting system with geolocation, transparent public tracking, and administrative automation." />
+    <link rel="manifest" href="/manifest.json" />
+    <meta name="theme-color" content="#fcde67" />
     
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
@@ -105,5 +107,12 @@
   <body class="font-body-md text-on-surface antialiased min-h-screen relative overflow-x-hidden selection:bg-secondary-container selection:text-on-secondary-container">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
+    <script>
+      if ('serviceWorker' in navigator) {
+        window.addEventListener('load', () => {
+          navigator.serviceWorker.register('/sw.js').catch(() => {});
+        });
+      }
+    </script>
   </body>
 </html>

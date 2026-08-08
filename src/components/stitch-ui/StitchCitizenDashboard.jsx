@@ -13,6 +13,7 @@ export default function StitchCitizenDashboard({ activeTab, setActiveTab, user, 
   const [applicantName, setApplicantName] = useState('');
   const [applicationSuccess, setApplicationSuccess] = useState(false);
   const [activeRationaleId, setActiveRationaleId] = useState(null);
+  const [showCertificateModal, setShowCertificateModal] = useState(false);
 
   const [sosActive, setSosActive] = useState(true);
   const [coords, setCoords] = useState('28.6139° N, 77.2090° E');
@@ -243,27 +244,37 @@ export default function StitchCitizenDashboard({ activeTab, setActiveTab, user, 
         {activeSubView === 'profile' ? (
           <div className="space-y-8">
             <div className="glass-panel rounded-2xl p-8 border-2 border-secondary-container relative overflow-hidden accent-glow">
-              <div className="flex flex-col md:flex-row items-center gap-6">
-                <div className="w-24 h-24 rounded-full bg-white/20 border-2 border-secondary-container overflow-hidden flex items-center justify-center shrink-0 shadow-md">
-                  <img src="/profile-shield-emblem.jpg" alt="Citizen Profile Shield Emblem" className="w-full h-full object-cover" />
+              <div className="flex flex-col md:flex-row items-center justify-between gap-6">
+                <div className="flex flex-col md:flex-row items-center gap-6">
+                  <div className="w-24 h-24 rounded-full bg-white/20 border-2 border-secondary-container overflow-hidden flex items-center justify-center shrink-0 shadow-md">
+                    <img src="/profile-shield-emblem.jpg" alt="Citizen Profile Shield Emblem" className="w-full h-full object-cover" />
+                  </div>
+
+                  <div className="text-center md:text-left space-y-1">
+                    <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
+                      <h2 className="font-headline-md text-2xl font-black text-white text-glow-sm">
+                        {user ? user.name : 'Verified Citizen User'}
+                      </h2>
+                      <span className="px-3 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-full font-mono text-xs font-black uppercase">
+                        VERIFIED AADHAAR LINKED
+                      </span>
+                    </div>
+                    <p className="font-mono text-xs text-slate-100 font-bold text-glow-sm">
+                      CITIZEN ID: CIT-2026-8849 &bull; UNIQUE HEALTH ID: 9482-1049-3829
+                    </p>
+                    <p className="text-sm font-bold text-slate-100 text-glow-sm">
+                      {user ? user.email : 'citizen@adhikar.gov.in'} &bull; Primary Location: {location}
+                    </p>
+                  </div>
                 </div>
 
-                <div className="flex-1 text-center md:text-left space-y-1">
-                  <div className="flex flex-wrap items-center justify-center md:justify-start gap-3">
-                    <h2 className="font-headline-md text-2xl font-black text-white text-glow-sm">
-                      {user ? user.name : 'Verified Citizen User'}
-                    </h2>
-                    <span className="px-3 py-1 bg-emerald-100 text-emerald-900 border border-emerald-300 rounded-full font-mono text-xs font-black uppercase">
-                      VERIFIED AADHAAR LINKED
-                    </span>
-                  </div>
-                  <p className="font-mono text-xs text-slate-100 font-bold text-glow-sm">
-                    CITIZEN ID: CIT-2026-8849 &bull; UNIQUE HEALTH ID: 9482-1049-3829
-                  </p>
-                  <p className="text-sm font-bold text-slate-100 text-glow-sm">
-                    {user ? user.email : 'citizen@adhikar.gov.in'} &bull; Primary Location: {location}
-                  </p>
-                </div>
+                <button 
+                  onClick={() => setShowCertificateModal(true)}
+                  className="px-6 py-3 bg-secondary-container text-on-secondary-container rounded-full font-label-bold text-xs font-black shadow-lg hover:shadow-[0_0_20px_rgba(252,222,103,0.8)] transition-all flex items-center gap-2"
+                >
+                  <span className="material-symbols-outlined text-sm">picture_as_pdf</span>
+                  Export Entitlements Certificate (PDF)
+                </button>
               </div>
             </div>
 
@@ -539,14 +550,30 @@ export default function StitchCitizenDashboard({ activeTab, setActiveTab, user, 
                         </div>
 
                         {activeRationaleId === scheme.id && (
-                          <div className="mt-4 p-4 bg-white/80 rounded-xl border border-white/60 text-xs space-y-2 shadow-inner">
-                            <h5 className="font-black text-slate-900 uppercase">EXPLAINABLE RATIONALE</h5>
+                          <div className="mt-4 p-4 bg-white/90 rounded-xl border border-white/60 text-xs space-y-3 shadow-inner">
+                            <h5 className="font-black text-slate-900 uppercase">MATHEMATICAL MATCH SCORE WEIGHT BREAKDOWN</h5>
+                            <div className="grid grid-cols-1 sm:grid-cols-3 gap-2 font-mono text-[11px] text-slate-900 font-bold border-b border-slate-300 pb-2">
+                              <div className="bg-amber-100 p-2 rounded text-center">
+                                <span className="block text-slate-700 font-bold">INCOME ALIGNMENT</span>
+                                <span className="font-black text-slate-950">35 / 35 PTS</span>
+                              </div>
+                              <div className="bg-amber-100 p-2 rounded text-center">
+                                <span className="block text-slate-700 font-bold">JURISDICTION FIT</span>
+                                <span className="font-black text-slate-950">35 / 35 PTS</span>
+                              </div>
+                              <div className="bg-amber-100 p-2 rounded text-center">
+                                <span className="block text-slate-700 font-bold">OCCUPATION MATCH</span>
+                                <span className="font-black text-slate-950">30 / 30 PTS</span>
+                              </div>
+                            </div>
+
+                            <h5 className="font-black text-slate-900 uppercase pt-1">EXPLAINABLE RATIONALE</h5>
                             <ul className="list-disc pl-4 space-y-1">
                               {scheme.matchExplanations?.map((exp, idx) => (
                                 <li key={idx} className="font-bold text-emerald-900">{exp}</li>
                               ))}
                             </ul>
-                            <h5 className="font-black text-slate-900 uppercase pt-2">DOCUMENT CHECKLIST</h5>
+                            <h5 className="font-black text-slate-900 uppercase pt-1">DOCUMENT CHECKLIST</h5>
                             <p className="font-bold text-slate-900">{scheme.document_checklist?.join(', ')}</p>
                           </div>
                         )}
@@ -689,6 +716,73 @@ export default function StitchCitizenDashboard({ activeTab, setActiveTab, user, 
           </>
         )}
       </div>
+
+      {showCertificateModal && (
+        <div className="fixed inset-0 bg-black/80 backdrop-blur-md flex items-center justify-center z-50 p-4">
+          <div className="glass-panel max-w-2xl w-full rounded-2xl p-8 bg-white/95 border-2 border-secondary-container shadow-2xl text-slate-900 space-y-6">
+            <div className="flex justify-between items-start border-b border-slate-300 pb-4">
+              <div>
+                <h3 className="font-headline-md text-2xl font-black text-slate-950 uppercase tracking-tight">
+                  STATE WELFARE &amp; ENTITLEMENTS CERTIFICATE
+                </h3>
+                <p className="font-mono text-xs font-bold text-slate-700 mt-1">
+                  MERA AWAAZ MERA ADHIKAR &bull; OFFICIAL CIVIC VERIFICATION PORTAL
+                </p>
+              </div>
+              <span className="px-3 py-1 bg-emerald-100 text-emerald-950 rounded-full font-mono text-xs font-black uppercase">
+                VERIFIED OFFICIAL DOCUMENT
+              </span>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 text-xs font-mono font-bold bg-amber-50 p-4 rounded-xl border border-amber-200">
+              <div>
+                <span className="text-slate-500 block">BENEFICIARY NAME</span>
+                <span className="text-slate-950 font-black text-sm">{user ? user.name : 'Verified Citizen User'}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block">CITIZEN ID</span>
+                <span className="text-slate-950 font-black text-sm">CIT-2026-8849</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block">DECLARED INCOME</span>
+                <span className="text-slate-950 font-black text-sm">₹ {Number(income).toLocaleString('en-IN')}</span>
+              </div>
+              <div>
+                <span className="text-slate-500 block">DIRECT BENEFIT TRANSFER</span>
+                <span className="text-emerald-800 font-black text-sm">ACTIVE (Aadhaar Seeded)</span>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <h4 className="font-black text-xs uppercase tracking-wider text-slate-700">VERIFIED WELFARE SCHEMES</h4>
+              <ul className="list-disc pl-5 text-xs font-bold space-y-1">
+                <li>PM Vishwakarma Toolkit Grant &amp; Credit Subsidy (100% Match)</li>
+                <li>PM Krishi Sinchayee Yojana Water Infrastructure Scheme (90% Match)</li>
+                <li>Atal Pension Yojana Retired Worker Security Fund (85% Match)</li>
+              </ul>
+            </div>
+
+            <div className="flex justify-between items-center pt-4 border-t border-slate-300">
+              <span className="font-mono text-[10px] font-bold text-slate-500">HASH: 0x8F92A47B-9102-ADHIKAR-2026</span>
+              <div className="flex gap-3">
+                <button 
+                  onClick={() => setShowCertificateModal(false)}
+                  className="px-4 py-2 border border-slate-400 rounded-full font-label-bold text-xs text-slate-800 hover:bg-slate-100 font-bold"
+                >
+                  Close
+                </button>
+                <button 
+                  onClick={() => window.print()}
+                  className="px-6 py-2 bg-secondary-container text-on-secondary-container rounded-full font-label-bold text-xs font-black shadow flex items-center gap-1"
+                >
+                  <span className="material-symbols-outlined text-sm">print</span>
+                  Print / Save PDF
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {selectedScheme && (
         <div className="fixed inset-0 bg-black/70 backdrop-blur-md flex items-center justify-center z-50 p-4">

@@ -48,6 +48,13 @@ export default function PublicTracker() {
     return 'bg-secondary-container text-on-secondary-container font-black';
   };
 
+  const getTimelineStepIndex = (status) => {
+    if (status === 'Resolved') return 3;
+    if (status === 'Escalated') return 2;
+    if (status === 'Pending') return 1;
+    return 0;
+  };
+
   return (
     <div className="max-w-5xl mx-auto py-8">
       <div className="glass-panel rounded-xl p-8 accent-glow relative overflow-hidden">
@@ -99,38 +106,62 @@ export default function PublicTracker() {
             ))}
           </div>
         ) : (
-          <div className="space-y-4">
-            {filteredComplaints.map(c => (
-              <div key={c.id} className="glass-panel p-6 rounded-xl border border-white/40 flex flex-col md:flex-row justify-between gap-4 items-start md:items-center shadow-md">
-                <div className="space-y-2 flex-1">
-                  <div className="flex items-center gap-3">
-                    <span className="font-mono text-xs font-black text-white text-glow-sm">#{c.tracking_hash || `CMP-${c.id}`}</span>
-                    <span className={`px-3 py-0.5 rounded-full text-xs font-label-bold ${getStatusBadge(c.status)}`}>
-                      {c.status}
+          <div className="space-y-6">
+            {filteredComplaints.map(c => {
+              const activeStep = getTimelineStepIndex(c.status);
+              return (
+                <div key={c.id} className="glass-panel p-6 rounded-xl border border-white/40 space-y-4 shadow-md">
+                  <div className="flex flex-col md:flex-row justify-between gap-4 items-start md:items-center">
+                    <div className="space-y-2 flex-1">
+                      <div className="flex items-center gap-3">
+                        <span className="font-mono text-xs font-black text-white text-glow-sm">#{c.tracking_hash || `CMP-${c.id}`}</span>
+                        <span className={`px-3 py-0.5 rounded-full text-xs font-label-bold ${getStatusBadge(c.status)}`}>
+                          {c.status}
+                        </span>
+                        <span className="text-xs font-black text-slate-100 text-glow-sm">{c.category}</span>
+                      </div>
+
+                      <h3 className="font-headline-md text-lg font-black text-white text-glow-sm">{c.title}</h3>
+                      <p className="font-body-md text-sm text-slate-100 font-bold text-glow-sm">{c.description}</p>
+
+                      <div className="font-mono text-xs text-slate-200 font-bold text-glow-sm">
+                        LOCATION: {c.location_descriptor} ({c.latitude}, {c.longitude})
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col items-end gap-2 shrink-0">
+                      <button 
+                        onClick={() => handleUpvote(c.id)}
+                        className="px-4 py-2 bg-secondary-container text-on-secondary-container rounded-full text-xs font-label-bold font-black flex items-center gap-1 hover:shadow-lg transition-all"
+                      >
+                        <span className="material-symbols-outlined text-sm">thumb_up</span>
+                        UPVOTE COMPLAINT ({c.upvotes || 0})
+                      </button>
+                      <span className="text-[10px] font-mono text-slate-200 font-bold text-glow-sm">SLA: 4 HOURS REMAINING</span>
+                    </div>
+                  </div>
+
+                  <div className="pt-4 border-t border-white/20">
+                    <span className="font-mono text-[10px] font-black text-white uppercase text-glow-sm block mb-2">
+                      RESOLUTION SLA TIMELINE
                     </span>
-                    <span className="text-xs font-black text-slate-100 text-glow-sm">{c.category}</span>
-                  </div>
-
-                  <h3 className="font-headline-md text-lg font-black text-white text-glow-sm">{c.title}</h3>
-                  <p className="font-body-md text-sm text-slate-100 font-bold text-glow-sm">{c.description}</p>
-
-                  <div className="font-mono text-xs text-slate-200 font-bold text-glow-sm">
-                    LOCATION: {c.location_descriptor} ({c.latitude}, {c.longitude})
+                    <div className="grid grid-cols-4 gap-2 text-center text-[11px] font-mono font-bold">
+                      {['LOGGED', 'OFFICER REVIEW', 'INSPECTION', 'RESOLVED'].map((stepName, sIdx) => {
+                        const isDone = sIdx <= activeStep;
+                        return (
+                          <div key={sIdx} className="space-y-1">
+                            <div className={`h-2 rounded-full transition-all ${isDone ? 'bg-secondary-container shadow' : 'bg-white/30'}`}></div>
+                            <span className={`block font-black text-glow-sm ${isDone ? 'text-secondary-container' : 'text-slate-200/70'}`}>
+                              {stepName}
+                            </span>
+                          </div>
+                        );
+                      })}
+                    </div>
                   </div>
                 </div>
-
-                <div className="flex flex-col items-end gap-2 shrink-0">
-                  <button 
-                    onClick={() => handleUpvote(c.id)}
-                    className="px-4 py-2 bg-secondary-container text-on-secondary-container rounded-full text-xs font-label-bold font-black flex items-center gap-1 hover:shadow-lg transition-all"
-                  >
-                    <span className="material-symbols-outlined text-sm">thumb_up</span>
-                    UPVOTE COMPLAINT ({c.upvotes || 0})
-                  </button>
-                  <span className="text-[10px] font-mono text-slate-200 font-bold text-glow-sm">LOGGED: 18 HOURS AGO</span>
-                </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </div>
