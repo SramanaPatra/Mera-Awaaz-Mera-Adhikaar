@@ -2,22 +2,17 @@ import React, { useState, useEffect } from 'react';
 
 export default function PublicTracker() {
   const [complaints, setComplaints] = useState([]);
-  const [statusFilter, setStatusFilter] = useState('All');
-  const [categoryFilter, setCategoryFilter] = useState('All');
   const [loading, setLoading] = useState(true);
+  const [filterStatus, setFilterStatus] = useState('ALL');
+  const [filterCategory, setFilterCategory] = useState('ALL');
 
   useEffect(() => {
     fetchComplaints();
-  }, [statusFilter, categoryFilter]);
+  }, []);
 
   const fetchComplaints = async () => {
-    setLoading(true);
     try {
-      const queryParams = new URLSearchParams();
-      if (statusFilter !== 'All') queryParams.append('status', statusFilter);
-      if (categoryFilter !== 'All') queryParams.append('category', categoryFilter);
-
-      const res = await fetch(`/api/complaints?${queryParams.toString()}`);
+      const res = await fetch('/api/complaints');
       const data = await res.json();
       if (data.success) {
         setComplaints(data.data);
@@ -34,133 +29,111 @@ export default function PublicTracker() {
       const res = await fetch(`/api/complaints/${id}/upvote`, { method: 'POST' });
       const data = await res.json();
       if (data.success) {
-        setComplaints(prev => prev.map(c => c.id === id ? { ...c, upvotes: data.upvotes } : c));
+        setComplaints(prev => prev.map(c => c.id === id ? { ...c, upvotes: data.data.upvotes } : c));
       }
     } catch (err) {
       console.error(err);
     }
   };
 
-  const getStatusBadge = (status) => {
-    switch (status) {
-      case 'Resolved':
-        return <span className="badge badge-resolved"><span className="status-dot"></span>RESOLVED</span>;
-      case 'Escalated':
-        return <span className="badge badge-escalated"><span className="status-dot"></span>ESCALATED</span>;
-      default:
-        return <span className="badge badge-pending"><span className="status-dot"></span>PENDING</span>;
-    }
-  };
+  const filteredComplaints = complaints.filter(c => {
+    if (filterStatus !== 'ALL' && c.status !== filterStatus) return false;
+    if (filterCategory !== 'ALL' && c.category !== filterCategory) return false;
+    return true;
+  });
 
-  const calculateHoursAgo = (timestamp) => {
-    const hours = Math.round((new Date().getTime() - new Date(timestamp).getTime()) / (1000 * 60 * 60));
-    if (hours < 1) return 'JUST NOW';
-    return `${hours} HOURS AGO`;
+  const getStatusBadge = (status) => {
+    if (status === 'Escalated') return 'bg-error text-white border border-red-300 font-black';
+    if (status === 'Resolved') return 'bg-emerald-300 text-emerald-950 font-black';
+    return 'bg-secondary-container text-on-secondary-container font-black';
   };
 
   return (
-    <div>
-      <h1 className="glow-title">PUBLIC GRIEVANCE LEDGER &amp; TRACKER</h1>
-      <p className="subtitle">Real-time transparent audit tracker monitoring civic complaint resolutions and authority SLAs.</p>
+    <div className="max-w-5xl mx-auto py-8">
+      <div className="glass-panel rounded-xl p-8 accent-glow relative overflow-hidden">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 border-b border-white/30 pb-4 gap-4">
+          <div>
+            <h2 className="font-headline-lg text-headline-md font-black text-white text-glow-md">
+              PUBLIC GRIEVANCE LEDGER &amp; TRACKER
+            </h2>
+            <p className="font-body-md text-slate-100 text-sm mt-1 font-bold text-glow-sm">
+              Real-time transparent audit tracker monitoring civic complaint resolutions and authority SLAs.
+            </p>
+          </div>
 
-      <div className="card" style={{ marginBottom: '24px', padding: '16px 24px' }}>
-        <div style={{ display: 'flex', gap: '20px', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center' }}>
-            <span className="form-label">STATUS FILTER:</span>
-            {['All', 'Pending', 'Resolved', 'Escalated'].map((st) => (
+          <div className="flex flex-wrap gap-2 items-center">
+            <span className="font-label-bold text-xs text-white font-black mr-2 text-glow-sm">STATUS FILTER:</span>
+            {['ALL', 'Pending', 'Resolved', 'Escalated'].map(st => (
               <button 
                 key={st}
-                className={`tab-btn ${statusFilter === st ? 'active' : ''}`}
-                onClick={() => setStatusFilter(st)}
-                style={{ padding: '6px 12px', fontSize: '0.75rem' }}
+                onClick={() => setFilterStatus(st)}
+                className={`px-3 py-1 rounded-full text-xs font-label-bold font-black transition-all ${filterStatus === st ? 'bg-secondary-container text-on-secondary-container shadow-md' : 'bg-white/30 text-white hover:bg-white/50 border border-white/40 text-glow-sm'}`}
               >
                 {st.toUpperCase()}
               </button>
             ))}
           </div>
+        </div>
 
-          <div style={{ display: 'flex', gap: '8px', alignItems: 'center', marginLeft: 'auto' }}>
-            <span className="form-label">CATEGORY:</span>
+        <div className="mb-6 flex justify-end">
+          <div className="flex items-center gap-2">
+            <span className="font-label-bold text-xs text-white font-black text-glow-sm">CATEGORY:</span>
             <select 
-              className="form-select" 
-              value={categoryFilter}
-              onChange={(e) => setCategoryFilter(e.target.value)}
-              style={{ padding: '6px 12px', width: 'auto', fontSize: '0.85rem' }}
+              value={filterCategory}
+              onChange={(e) => setFilterCategory(e.target.value)}
+              className="bg-white/80 border border-white/60 rounded-lg px-3 py-1.5 text-xs font-black text-slate-900 outline-none shadow-sm cursor-pointer"
             >
-              <option value="All">ALL CATEGORIES</option>
-              <option value="Infrastructure">Infrastructure</option>
-              <option value="Sanitation & Sewage">Sanitation &amp; Sewage</option>
-              <option value="Public Safety">Public Safety</option>
+              <option value="ALL">ALL CATEGORIES</option>
               <option value="Water Supply">Water Supply</option>
+              <option value="Public Safety">Public Safety</option>
+              <option value="Sanitation & Sewage">Sanitation &amp; Sewage</option>
+              <option value="Infrastructure">Infrastructure</option>
             </select>
           </div>
         </div>
-      </div>
 
-      {loading ? (
-        <div style={{ textAlign: 'center', padding: '40px', color: 'var(--neon-cyan)' }}>
-          FETCHING PUBLIC LEDGER...
-        </div>
-      ) : (
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-          {complaints.map((item, idx) => (
-            <div 
-              key={item.id} 
-              className="card card-interactive stagger-item"
-              style={{ animationDelay: `${idx * 0.08}s` }}
-            >
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '12px', marginBottom: '12px' }}>
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
-                  <span style={{ fontFamily: 'var(--font-mono)', fontWeight: '800', color: '#FFFFFF', fontSize: '1.1rem' }}>
-                    {item.id}
-                  </span>
-                  {getStatusBadge(item.status)}
-                  <span className="badge badge-cyan">{item.category}</span>
+        {loading ? (
+          <div className="space-y-4">
+            {[1, 2, 3].map(i => (
+              <div key={i} className="glass-panel p-6 rounded-xl h-28 animate-pulse"></div>
+            ))}
+          </div>
+        ) : (
+          <div className="space-y-4">
+            {filteredComplaints.map(c => (
+              <div key={c.id} className="glass-panel p-6 rounded-xl border border-white/40 flex flex-col md:flex-row justify-between gap-4 items-start md:items-center shadow-md">
+                <div className="space-y-2 flex-1">
+                  <div className="flex items-center gap-3">
+                    <span className="font-mono text-xs font-black text-white text-glow-sm">#{c.tracking_hash || `CMP-${c.id}`}</span>
+                    <span className={`px-3 py-0.5 rounded-full text-xs font-label-bold ${getStatusBadge(c.status)}`}>
+                      {c.status}
+                    </span>
+                    <span className="text-xs font-black text-slate-100 text-glow-sm">{c.category}</span>
+                  </div>
+
+                  <h3 className="font-headline-md text-lg font-black text-white text-glow-sm">{c.title}</h3>
+                  <p className="font-body-md text-sm text-slate-100 font-bold text-glow-sm">{c.description}</p>
+
+                  <div className="font-mono text-xs text-slate-200 font-bold text-glow-sm">
+                    LOCATION: {c.location_descriptor} ({c.latitude}, {c.longitude})
+                  </div>
                 </div>
 
-                <div style={{ fontFamily: 'var(--font-mono)', fontSize: '0.8rem', color: 'var(--color-text-muted)' }}>
-                  LOGGED: {calculateHoursAgo(item.reported_at)}
-                </div>
-              </div>
-
-              <h3 style={{ fontSize: '1.25rem', fontWeight: '800', marginBottom: '8px', color: '#FFFFFF' }}>
-                {item.title}
-              </h3>
-
-              <p style={{ color: 'var(--color-text-muted)', fontSize: '0.95rem', marginBottom: '16px' }}>
-                {item.description}
-              </p>
-
-              {item.resolution_note && (
-                <div style={{ background: 'rgba(0, 255, 102, 0.05)', borderLeft: '4px solid var(--neon-green)', padding: '12px', marginBottom: '16px', borderRadius: '0 6px 6px 0' }}>
-                  <span style={{ fontSize: '0.75rem', fontWeight: '800', color: 'var(--neon-green)', textTransform: 'uppercase', display: 'block' }}>
-                    RESOLUTION AUDIT NOTE
-                  </span>
-                  <span style={{ fontSize: '0.9rem', color: '#FFFFFF' }}>
-                    {item.resolution_note}
-                  </span>
-                </div>
-              )}
-
-              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px', paddingTop: '12px', borderTop: '1px solid var(--border-color)' }}>
-                <div style={{ fontSize: '0.8rem', color: 'var(--color-text-muted)', fontFamily: 'var(--font-mono)' }}>
-                  LOCATION: {item.location_name} ({item.latitude}, {item.longitude})
-                </div>
-
-                <div style={{ display: 'flex', gap: '12px', alignItems: 'center' }}>
+                <div className="flex flex-col items-end gap-2 shrink-0">
                   <button 
-                    className="btn-primary"
-                    style={{ fontSize: '0.8rem', padding: '6px 14px' }}
-                    onClick={() => handleUpvote(item.id)}
+                    onClick={() => handleUpvote(c.id)}
+                    className="px-4 py-2 bg-secondary-container text-on-secondary-container rounded-full text-xs font-label-bold font-black flex items-center gap-1 hover:shadow-lg transition-all"
                   >
-                    UPVOTE COMPLAINT ({item.upvotes})
+                    <span className="material-symbols-outlined text-sm">thumb_up</span>
+                    UPVOTE COMPLAINT ({c.upvotes || 0})
                   </button>
+                  <span className="text-[10px] font-mono text-slate-200 font-bold text-glow-sm">LOGGED: 18 HOURS AGO</span>
                 </div>
               </div>
-            </div>
-          ))}
-        </div>
-      )}
+            ))}
+          </div>
+        )}
+      </div>
     </div>
   );
 }

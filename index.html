@@ -3,13 +3,106 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Mera Awaaz Mera Adhikar - Social Issues &amp; Civic Welfare Platform</title>
+    <title>Citizen Dashboard - Mera Awaaz Mera Adhikar</title>
     <meta name="description" content="AI-driven civic welfare recommendation engine, anonymous issue reporting system with geolocation, transparent public tracking, and administrative automation." />
+    
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=JetBrains+Mono:wght@400;600;800&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Be+Vietnam+Pro:wght@800;900&family=Hanken+Grotesk:wght@400;700&family=Inter:wght@400;700;900&family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet" />
+    
+    <script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+    <script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            colors: {
+              "on-surface-variant": "#444748",
+              "on-secondary": "#ffffff",
+              "on-background": "#1c1b1b",
+              "surface": "#fcf9f8",
+              "inverse-on-surface": "#f3f0ef",
+              "outline-variant": "#c4c7c7",
+              "background": "#fcf9f8",
+              "on-tertiary": "#ffffff",
+              "on-surface": "#1c1b1b",
+              "on-secondary-fixed-variant": "#544600",
+              "primary": "#000000",
+              "surface-variant": "#e5e2e1",
+              "on-primary-fixed-variant": "#474646",
+              "outline": "#747878",
+              "secondary-fixed": "#ffe16b",
+              "surface-container-high": "#eae7e7",
+              "tertiary": "#000000",
+              "on-secondary-container": "#746100",
+              "on-secondary-fixed": "#221b00",
+              "surface-container-highest": "#e5e2e1",
+              "on-tertiary-fixed": "#2d141c",
+              "on-primary": "#ffffff",
+              "inverse-surface": "#313030",
+              "inverse-primary": "#c8c6c5",
+              "surface-dim": "#dcd9d9",
+              "on-tertiary-fixed-variant": "#5e3e47",
+              "secondary-fixed-dim": "#e2c550",
+              "error-container": "#ffdad6",
+              "on-tertiary-container": "#a07a83",
+              "on-error": "#ffffff",
+              "tertiary-container": "#2d141c",
+              "secondary-container": "#fcde67",
+              "secondary": "#6f5d00",
+              "on-primary-fixed": "#1c1b1b",
+              "surface-container-lowest": "#ffffff",
+              "surface-tint": "#5f5e5e",
+              "surface-bright": "#fcf9f8",
+              "surface-container": "#f0eded",
+              "error": "#ba1a1a",
+              "on-primary-container": "#858383",
+              "tertiary-fixed": "#ffd9e2",
+              "surface-container-low": "#f6f3f2",
+              "tertiary-fixed-dim": "#e7bbc6",
+              "on-error-container": "#93000a",
+              "primary-container": "#1c1b1b",
+              "primary-fixed": "#e5e2e1",
+              "primary-fixed-dim": "#c8c6c5"
+            },
+            borderRadius: {
+              "DEFAULT": "0.25rem",
+              "lg": "0.5rem",
+              "xl": "0.75rem",
+              "full": "9999px"
+            },
+            spacing: {
+              "margin-desktop": "64px",
+              "margin-mobile": "20px",
+              "container-max": "1280px",
+              "unit": "8px",
+              "gutter": "24px"
+            },
+            fontFamily: {
+              "headline-lg": ["Be Vietnam Pro", "sans-serif"],
+              "body-lg": ["Hanken Grotesk", "sans-serif"],
+              "headline-lg-mobile": ["Be Vietnam Pro", "sans-serif"],
+              "headline-md": ["Be Vietnam Pro", "sans-serif"],
+              "body-md": ["Hanken Grotesk", "sans-serif"],
+              "display-lg": ["Be Vietnam Pro", "sans-serif"],
+              "label-bold": ["Hanken Grotesk", "sans-serif"]
+            },
+            fontSize: {
+              "headline-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "900" }],
+              "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+              "headline-lg-mobile": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.02em", "fontWeight": "900" }],
+              "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "800" }],
+              "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }],
+              "display-lg": ["72px", { "lineHeight": "80px", "letterSpacing": "-0.04em", "fontWeight": "900" }],
+              "label-bold": ["14px", { "lineHeight": "20px", "letterSpacing": "0.05em", "fontWeight": "700" }]
+            }
+          }
+        }
+      }
+    </script>
   </head>
-  <body>
+  <body class="font-body-md text-on-surface antialiased min-h-screen relative overflow-x-hidden selection:bg-secondary-container selection:text-on-secondary-container">
     <div id="root"></div>
     <script type="module" src="/src/main.jsx"></script>
   </body>

@@ -3,37 +3,38 @@ import React, { useState } from 'react';
 export default function IssueReporter({ onReportSubmitted }) {
   const [title, setTitle] = useState('');
   const [category, setCategory] = useState('Infrastructure');
+  const [urgency, setUrgency] = useState('Medium Priority');
+  const [locationDescriptor, setLocationDescriptor] = useState('Metro District Corridor');
+  const [latitude, setLatitude] = useState('28.6139');
+  const [longitude, setLongitude] = useState('77.2090');
   const [description, setDescription] = useState('');
-  const [urgency, setUrgency] = useState('Medium');
-  const [locationName, setLocationName] = useState('Metro District Corridor');
-  const [latitude, setLatitude] = useState(40.7128);
-  const [longitude, setLongitude] = useState(-74.0060);
-  const [geoStatus, setGeoStatus] = useState('DEFAULT METRO COORDINATES');
   const [submitting, setSubmitting] = useState(false);
-  const [submittedComplaint, setSubmittedComplaint] = useState(null);
+  const [submissionResult, setSubmissionResult] = useState(null);
+  const [gpsStatus, setGpsStatus] = useState(null);
 
-  const handleGetLocation = () => {
-    if ('geolocation' in navigator) {
-      setGeoStatus('ACQUIRING SATELLITE FIX...');
-      navigator.geolocation.getCurrentPosition(
-        (position) => {
-          setLatitude(position.coords.latitude.toFixed(6));
-          setLongitude(position.coords.longitude.toFixed(6));
-          setGeoStatus(`LAT: ${position.coords.latitude.toFixed(4)}, LON: ${position.coords.longitude.toFixed(4)}`);
-        },
-        (error) => {
-          setGeoStatus('LOCATION PERMISSION DENIED - USING METRO FALLBACK');
-        },
-        { enableHighAccuracy: true, timeout: 10000 }
-      );
-    } else {
-      setGeoStatus('GEOLOCATION API NOT SUPPORTED BY BROWSER');
+  const handleAutoDetectLocation = () => {
+    if (!('geolocation' in navigator)) {
+      setGpsStatus('GPS GEOLOCATION NOT SUPPORTED');
+      return;
     }
+
+    setGpsStatus('ACQUIRING COORDS...');
+    navigator.geolocation.getCurrentPosition(
+      (position) => {
+        setLatitude(position.coords.latitude.toFixed(4));
+        setLongitude(position.coords.longitude.toFixed(4));
+        setGpsStatus('GPS BINDING SUCCESSFUL');
+      },
+      () => {
+        setGpsStatus('LOCATION ACCESS DENIED');
+      }
+    );
   };
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     setSubmitting(true);
+    setSubmissionResult(null);
 
     try {
       const res = await fetch('/api/complaints', {
@@ -42,17 +43,22 @@ export default function IssueReporter({ onReportSubmitted }) {
         body: JSON.stringify({
           title,
           category,
-          description,
           urgency,
+          location_descriptor: locationDescriptor,
           latitude,
           longitude,
-          location_name: locationName
+          description
         })
       });
 
       const data = await res.json();
       if (data.success) {
-        setSubmittedComplaint(data.data);
+        setSubmissionResult(data.data);
+        setTitle('');
+        setDescription('');
+        if (onReportSubmitted) {
+          setTimeout(onReportSubmitted, 2000);
+        }
       }
     } catch (err) {
       console.error(err);
@@ -62,154 +68,152 @@ export default function IssueReporter({ onReportSubmitted }) {
   };
 
   return (
-    <div>
-      <h1 className="glow-title">ANONYMOUS CIVIC ISSUE REPORTING</h1>
-      <p className="subtitle">Encrypted public reporting mechanism with automated GPS coordinate binding and immediate ledger entry.</p>
+    <div className="max-w-4xl mx-auto py-8">
+      <div className="glass-panel rounded-xl p-8 accent-glow relative overflow-hidden">
+        <div className="absolute top-0 right-0 w-32 h-32 bg-white/10 rounded-full blur-2xl -mr-16 -mt-16 pointer-events-none"></div>
 
-      {submittedComplaint ? (
-        <div className="card" style={{ border: '2px solid var(--neon-green)', boxShadow: 'var(--glow-green)', textAlign: 'center', padding: '40px' }}>
-          <div className="badge badge-resolved" style={{ fontSize: '1rem', padding: '8px 18px', marginBottom: '16px' }}>
-            REPORT LOGGED TO PUBLIC LEDGER
-          </div>
-          <h2 style={{ fontSize: '2rem', fontWeight: '900', color: '#FFFFFF', marginBottom: '8px', fontFamily: 'var(--font-mono)' }}>
-            ID: {submittedComplaint.id}
-          </h2>
-          <p style={{ color: 'var(--color-text-muted)', marginBottom: '24px' }}>
-            Coordinates: {submittedComplaint.latitude}, {submittedComplaint.longitude} | Urgency: {submittedComplaint.urgency}
-          </p>
-
-          <div style={{ display: 'flex', gap: '16px', justifyContent: 'center' }}>
-            <button 
-              className="btn-primary"
-              onClick={() => {
-                setSubmittedComplaint(null);
-                setTitle('');
-                setDescription('');
-              }}
-            >
-              SUBMIT ANOTHER REPORT
-            </button>
-            <button 
-              className="btn-success"
-              onClick={onReportSubmitted}
-            >
-              VIEW ON PUBLIC TRACKER
-            </button>
+        <div className="flex items-center gap-3 mb-6 border-b border-white/30 pb-4">
+          <span className="material-symbols-outlined text-secondary-container bg-primary p-2 rounded-full text-2xl">report_problem</span>
+          <div>
+            <h2 className="font-headline-lg text-headline-md font-black text-white text-glow-md">
+              ANONYMOUS CIVIC ISSUE REPORTING
+            </h2>
+            <p className="font-body-md text-slate-100 text-sm mt-1 font-bold text-glow-sm">
+              Encrypted public reporting mechanism with automated GPS coordinate binding and immediate ledger entry.
+            </p>
           </div>
         </div>
-      ) : (
-        <form onSubmit={handleSubmit} className="card">
-          <div className="form-group">
-            <label className="form-label">Issue Headline / Short Title</label>
-            <input 
-              type="text" 
-              className="form-input"
-              value={title}
-              onChange={(e) => setTitle(e.target.value)}
-              placeholder="e.g. Hazardous Road Sinkhole near Transit Hub"
-              required
-            />
-          </div>
 
-          <div className="grid-2">
-            <div className="form-group">
-              <label className="form-label">Category</label>
-              <select 
-                className="form-select"
-                value={category}
-                onChange={(e) => setCategory(e.target.value)}
-              >
-                <option value="Infrastructure">Infrastructure</option>
-                <option value="Sanitation & Sewage">Sanitation &amp; Sewage</option>
-                <option value="Public Safety">Public Safety</option>
-                <option value="Water Supply">Water Supply</option>
-                <option value="Environmental Hazard">Environmental Hazard</option>
-              </select>
+        {submissionResult ? (
+          <div className="p-6 bg-white/80 border-2 border-secondary-container rounded-xl text-center space-y-4 shadow-xl">
+            <span className="material-symbols-outlined text-emerald-800 text-4xl">check_circle</span>
+            <h3 className="font-headline-md text-xl font-black text-slate-900">GRIEVANCE LOGGED SUCCESSFULLY</h3>
+            <p className="font-mono text-sm font-black text-slate-900">
+              Tracking Hash: <span className="bg-emerald-100 px-3 py-1 rounded text-emerald-900">{submissionResult.tracking_hash}</span>
+            </p>
+            <p className="text-xs font-body-md text-slate-700 font-bold">Redirecting to Public Ledger in 2 seconds...</p>
+          </div>
+        ) : (
+          <form onSubmit={handleSubmit} className="space-y-6">
+            <div className="space-y-2">
+              <label className="font-label-bold text-xs text-white block uppercase font-black text-glow-sm">Issue Headline / Short Title</label>
+              <input 
+                type="text"
+                className="w-full bg-white/80 border-b-2 border-white/60 focus:border-secondary-container border-t-0 border-l-0 border-r-0 px-4 py-3 font-body-md outline-none transition-colors rounded-t-lg text-slate-900 font-black shadow-inner"
+                value={title}
+                onChange={(e) => setTitle(e.target.value)}
+                placeholder="e.g. Hazardous Road Sinkhole near Central Market"
+                required
+              />
             </div>
 
-            <div className="form-group">
-              <label className="form-label">Severity / Urgency Tier</label>
-              <select 
-                className="form-select"
-                value={urgency}
-                onChange={(e) => setUrgency(e.target.value)}
-              >
-                <option value="Low">Low Priority</option>
-                <option value="Medium">Medium Priority</option>
-                <option value="High">High Severity</option>
-                <option value="Critical">Critical Emergency</option>
-              </select>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Location Descriptor / Landmark</label>
-            <input 
-              type="text" 
-              className="form-input"
-              value={locationName}
-              onChange={(e) => setLocationName(e.target.value)}
-              placeholder="e.g. Corner of 5th Ave and Maple Street"
-              required
-            />
-          </div>
-
-          <div className="card" style={{ background: 'var(--bg-input)', marginBottom: '20px', border: '1px dashed var(--neon-cyan)' }}>
-            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
-              <div>
-                <div style={{ fontSize: '0.8rem', color: 'var(--neon-cyan)', fontWeight: '700', textTransform: 'uppercase', fontFamily: 'var(--font-mono)' }}>
-                  HTML5 GEOLOCATION DISCOVERY
-                </div>
-                <div style={{ fontSize: '0.9rem', color: '#FFFFFF', marginTop: '4px', fontFamily: 'var(--font-mono)' }}>
-                  {geoStatus}
-                </div>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="font-label-bold text-xs text-white block uppercase font-black text-glow-sm">Category</label>
+                <select 
+                  className="w-full bg-white/80 border-b-2 border-white/60 focus:border-secondary-container border-t-0 border-l-0 border-r-0 px-4 py-3 font-body-md outline-none rounded-t-lg text-slate-900 font-black cursor-pointer shadow-inner"
+                  value={category}
+                  onChange={(e) => setCategory(e.target.value)}
+                >
+                  <option value="Infrastructure">Infrastructure</option>
+                  <option value="Water Supply">Water Supply</option>
+                  <option value="Public Sanitation">Public Sanitation &amp; Sewage</option>
+                  <option value="Public Safety">Public Safety &amp; Lighting</option>
+                  <option value="Traffic & Transit">Traffic &amp; Transit</option>
+                  <option value="Environmental Hazard">Environmental Hazard</option>
+                </select>
               </div>
 
+              <div className="space-y-2">
+                <label className="font-label-bold text-xs text-white block uppercase font-black text-glow-sm">Severity / Urgency Tier</label>
+                <select 
+                  className="w-full bg-white/80 border-b-2 border-white/60 focus:border-secondary-container border-t-0 border-l-0 border-r-0 px-4 py-3 font-body-md outline-none rounded-t-lg text-slate-900 font-black cursor-pointer shadow-inner"
+                  value={urgency}
+                  onChange={(e) => setUrgency(e.target.value)}
+                >
+                  <option value="Low Priority">Low Priority (Routine Standard)</option>
+                  <option value="Medium Priority">Medium Priority (Standard SLA)</option>
+                  <option value="High Priority">High Priority (Urgent Intervention)</option>
+                  <option value="Critical Emergency">Critical Emergency (Immediate Dispatch)</option>
+                </select>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <div className="flex justify-between items-center">
+                <label className="font-label-bold text-xs text-white uppercase font-black text-glow-sm">Location Descriptor / Landmark</label>
+                <button 
+                  type="button" 
+                  onClick={handleAutoDetectLocation}
+                  className="text-xs font-label-bold text-secondary-container flex items-center gap-1 hover:underline font-black text-glow-sm"
+                >
+                  <span className="material-symbols-outlined text-sm">my_location</span>
+                  AUTO-DETECT GPS COORDINATES
+                </button>
+              </div>
+
+              <input 
+                type="text"
+                className="w-full bg-white/80 border-b-2 border-white/60 focus:border-secondary-container border-t-0 border-l-0 border-r-0 px-4 py-3 font-body-md outline-none rounded-t-lg text-slate-900 font-black shadow-inner"
+                value={locationDescriptor}
+                onChange={(e) => setLocationDescriptor(e.target.value)}
+                placeholder="Metro District Corridor"
+                required
+              />
+
+              {gpsStatus && (
+                <span className="text-xs font-mono text-emerald-300 font-bold block text-glow-sm">{gpsStatus}</span>
+              )}
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+              <div className="space-y-2">
+                <label className="font-label-bold text-xs text-white block uppercase font-black text-glow-sm">Latitude</label>
+                <input 
+                  type="text"
+                  className="w-full bg-white/80 border-b-2 border-white/60 focus:border-secondary-container border-t-0 border-l-0 border-r-0 px-4 py-3 font-mono text-sm outline-none rounded-t-lg text-slate-900 font-black shadow-inner"
+                  value={latitude}
+                  onChange={(e) => setLatitude(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <label className="font-label-bold text-xs text-white block uppercase font-black text-glow-sm">Longitude</label>
+                <input 
+                  type="text"
+                  className="w-full bg-white/80 border-b-2 border-white/60 focus:border-secondary-container border-t-0 border-l-0 border-r-0 px-4 py-3 font-mono text-sm outline-none rounded-t-lg text-slate-900 font-black shadow-inner"
+                  value={longitude}
+                  onChange={(e) => setLongitude(e.target.value)}
+                  required
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label className="font-label-bold text-xs text-white block uppercase font-black text-glow-sm">Detailed Description of Incident</label>
+              <textarea 
+                rows="4"
+                className="w-full bg-white/80 border-b-2 border-white/60 focus:border-secondary-container border-t-0 border-l-0 border-r-0 px-4 py-3 font-body-md outline-none rounded-t-lg text-slate-900 font-black shadow-inner"
+                value={description}
+                onChange={(e) => setDescription(e.target.value)}
+                placeholder="Provide exact observations, hazards, or impact on public safety..."
+                required
+              />
+            </div>
+
+            <div className="pt-4 flex justify-end">
               <button 
-                type="button" 
-                className="btn-primary"
-                style={{ fontSize: '0.8rem', padding: '8px 16px' }}
-                onClick={handleGetLocation}
+                type="submit"
+                disabled={submitting}
+                className="bg-secondary-container text-on-secondary-container px-8 py-3 rounded-full font-label-bold text-label-bold hover:shadow-[0_0_20px_rgba(252,222,103,0.8)] transition-all font-black shadow-lg"
               >
-                AUTO-DETECT GPS COORDINATES
+                {submitting ? 'TRANSMITTING REPORT...' : 'SUBMIT ANONYMOUS REPORT'}
               </button>
             </div>
-
-            <div style={{ display: 'flex', gap: '16px', marginTop: '12px' }}>
-              <div style={{ flex: 1 }}>
-                <span className="form-label">LATITUDE</span>
-                <input type="text" className="form-input" value={latitude} onChange={(e) => setLatitude(e.target.value)} />
-              </div>
-              <div style={{ flex: 1 }}>
-                <span className="form-label">LONGITUDE</span>
-                <input type="text" className="form-input" value={longitude} onChange={(e) => setLongitude(e.target.value)} />
-              </div>
-            </div>
-          </div>
-
-          <div className="form-group">
-            <label className="form-label">Detailed Description of Incident</label>
-            <textarea 
-              className="form-textarea"
-              rows="4"
-              value={description}
-              onChange={(e) => setDescription(e.target.value)}
-              placeholder="Provide exact observations, hazards, or impact on public safety..."
-              required
-            ></textarea>
-          </div>
-
-          <div style={{ textAlign: 'right', marginTop: '24px' }}>
-            <button 
-              type="submit" 
-              className="btn-primary"
-              disabled={submitting}
-            >
-              {submitting ? 'TRANSMITTING REPORT...' : 'SUBMIT ANONYMOUS REPORT'}
-            </button>
-          </div>
-        </form>
-      )}
+          </form>
+        )}
+      </div>
     </div>
   );
 }

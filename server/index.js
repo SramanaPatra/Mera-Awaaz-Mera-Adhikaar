@@ -1,5 +1,6 @@
 import express from 'express';
 import cors from 'cors';
+import authRoutes from './routes/auth.js';
 import welfareRoutes from './routes/welfare.js';
 import complaintsRoutes from './routes/complaints.js';
 import adminRoutes from './routes/admin.js';
@@ -15,6 +16,7 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
 
+app.use('/api/auth', authRoutes);
 app.use('/api/welfare', welfareRoutes);
 app.use('/api/complaints', complaintsRoutes);
 app.use('/api/admin', adminRoutes);

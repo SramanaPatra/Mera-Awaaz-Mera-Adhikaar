@@ -1,8 +1,55 @@
 import express from 'express';
 import { dbState } from '../db.js';
 import { runEscalationCheck } from '../services/escalationScheduler.js';
+import { verifyToken, requireAdminRole } from '../middleware/auth.js';
 
 const router = express.Router();
+
+router.use(verifyToken);
+router.use(requireAdminRole);
+
+router.get('/grievances', (req, res) => {
+  res.json({
+    success: true,
+    data: dbState.complaints
+  });
+});
+
+router.put('/grievances/:id/status', (req, res) => {
+  const { status } = req.body;
+  const complaint = dbState.complaints.find(c => c.id === req.params.id || c.id === Number(req.params.id));
+
+  if (!complaint) {
+    return res.status(404).json({ success: false, message: 'Grievance record not found' });
+  }
+
+  const prevStatus = complaint.status;
+  complaint.status = status;
+
+  dbState.logs.push({
+    id: dbState.logs.length + 1,
+    complaint_id: complaint.id,
+    previous_status: prevStatus,
+    new_status: status,
+    action_by: req.user ? req.user.name : 'Authority Officer',
+    action_timestamp: new Date().toISOString()
+  });
+
+  res.json({
+    success: true,
+    message: `Grievance status updated to ${status}`,
+    data: complaint
+  });
+});
+
+router.post('/escalate-now', (req, res) => {
+  const result = runEscalationCheck(48);
+  res.json({
+    success: true,
+    message: 'Global SLA 48-Hour Escalation Audit Triggered',
+    data: result
+  });
+});
 
 router.get('/metrics', (req, res) => {
   const complaints = dbState.complaints;
@@ -43,48 +90,6 @@ router.get('/metrics', (req, res) => {
       schemeUptake,
       recentLogs: dbState.logs.slice(-10).reverse()
     }
-  });
-});
-
-router.patch('/complaints/:id/status', (req, res) => {
-  const { status, resolution_note, officer_id } = req.body;
-  const complaint = dbState.complaints.find(c => c.id === req.params.id);
-
-  if (!complaint) {
-    return res.status(404).json({ success: false, message: 'Complaint record not found' });
-  }
-
-  const previous_status = complaint.status;
-  complaint.status = status;
-
-  if (status === 'Resolved') {
-    complaint.resolved_at = new Date().toISOString();
-    if (resolution_note) complaint.resolution_note = resolution_note;
-  }
-
-  dbState.logs.push({
-    id: dbState.logs.length + 1,
-    complaint_id: complaint.id,
-    previous_status,
-    new_status: status,
-    action_by: officer_id || 'DISTRICT_OFFICER_ADMIN',
-    action_timestamp: new Date().toISOString()
-  });
-
-  res.json({
-    success: true,
-    message: `Status updated from ${previous_status} to ${status}`,
-    data: complaint
-  });
-});
-
-router.post('/trigger-escalation', (req, res) => {
-  const { thresholdHours } = req.body;
-  const result = runEscalationCheck(thresholdHours || 48);
-  res.json({
-    success: true,
-    message: 'Automated 48-hour SLA escalation check completed',
-    data: result
   });
 });
 
