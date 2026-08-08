@@ -1,11 +1,13 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 
 export function useWebSpeech() {
-  const [isListening, setIsListening] = useState(false);
+  const [speechState, setSpeechState] = useState('idle');
   const [speechError, setSpeechError] = useState(null);
   const [isSpeaking, setIsSpeaking] = useState(false);
 
   const recognitionRef = useRef(null);
+  const mediaRecorderRef = useRef(null);
+  const audioChunksRef = useRef([]);
 
   useEffect(() => {
     const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
@@ -17,62 +19,131 @@ export function useWebSpeech() {
     }
   }, []);
 
-  const startListening = useCallback((languageCode = 'en-IN', onResultCallback) => {
-    setSpeechError(null);
-    if (!recognitionRef.current) {
-      setSpeechError('Speech recognition is not supported in this browser environment.');
+  const fallbackServerTranscription = async (localeCode, callback) => {
+    try {
+      setSpeechState('processing');
+      const res = await fetch('/api/speech/transcribe', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ localeCode })
+      });
+      const data = await res.json();
+      if (data.success && data.text) {
+        if (callback) callback(data.text);
+        setSpeechState('success');
+        setTimeout(() => setSpeechState('idle'), 1500);
+      } else {
+        setSpeechState('idle');
+      }
+    } catch (err) {
+      setSpeechState('idle');
+    }
+  };
+
+  const startListeningWithMediaRecorder = async (localeCode, onResultCallback) => {
+    if (!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia) {
+      setSpeechError('Microphone audio access is not supported in this browser.');
+      setSpeechState('error');
       return;
     }
 
     try {
-      recognitionRef.current.lang = languageCode;
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
+      audioChunksRef.current = [];
 
-      recognitionRef.current.onresult = (event) => {
-        const text = event.results[0][0].transcript;
-        if (onResultCallback) onResultCallback(text);
-        setIsListening(false);
-      };
+      const mediaRecorder = new MediaRecorder(stream);
+      mediaRecorderRef.current = mediaRecorder;
 
-      recognitionRef.current.onerror = (event) => {
-        let msg = 'Microphone speech recognition error.';
-        if (event.error === 'not-allowed') {
-          msg = 'Microphone access permission was denied by user.';
-        } else if (event.error === 'no-speech') {
-          msg = 'No speech detected. Please speak into the microphone.';
+      mediaRecorder.ondataavailable = (event) => {
+        if (event.data.size > 0) {
+          audioChunksRef.current.push(event.data);
         }
-        setSpeechError(msg);
-        setIsListening(false);
       };
 
-      recognitionRef.current.onend = () => {
-        setIsListening(false);
+      mediaRecorder.onstop = () => {
+        stream.getTracks().forEach(track => track.stop());
+        fallbackServerTranscription(localeCode, onResultCallback);
       };
 
-      setIsListening(true);
-      recognitionRef.current.start();
+      setSpeechState('listening');
+      mediaRecorder.start();
+
+      setTimeout(() => {
+        if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+          mediaRecorderRef.current.stop();
+        }
+      }, 4000);
     } catch (err) {
-      setSpeechError('Could not initialize microphone input.');
-      setIsListening(false);
+      if (err.name === 'NotAllowedError' || err.name === 'PermissionDeniedError') {
+        setSpeechError('Microphone access permission was denied by user.');
+        setSpeechState('error');
+      } else {
+        fallbackServerTranscription(localeCode, onResultCallback);
+      }
     }
+  };
+
+  const startListening = useCallback((localeCode = 'en-IN', onResultCallback) => {
+    setSpeechError(null);
+    setSpeechState('idle');
+
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.lang = localeCode;
+
+        recognitionRef.current.onstart = () => {
+          setSpeechState('listening');
+        };
+
+        recognitionRef.current.onresult = (event) => {
+          setSpeechState('processing');
+          const transcriptText = event.results[0][0].transcript;
+          if (onResultCallback) onResultCallback(transcriptText);
+          setSpeechState('success');
+          setTimeout(() => setSpeechState('idle'), 1500);
+        };
+
+        recognitionRef.current.onerror = (event) => {
+          if (event.error === 'not-allowed') {
+            setSpeechError('Microphone access permission was denied by user.');
+            setSpeechState('error');
+          } else {
+            startListeningWithMediaRecorder(localeCode, onResultCallback);
+          }
+        };
+
+        recognitionRef.current.onend = () => {
+          setSpeechState(prev => prev === 'listening' ? 'idle' : prev);
+        };
+
+        recognitionRef.current.start();
+        return;
+      } catch (e) {}
+    }
+
+    startListeningWithMediaRecorder(localeCode, onResultCallback);
   }, []);
 
   const stopListening = useCallback(() => {
-    if (recognitionRef.current && isListening) {
-      recognitionRef.current.stop();
-      setIsListening(false);
+    if (recognitionRef.current) {
+      try {
+        recognitionRef.current.stop();
+      } catch (e) {}
     }
-  }, [isListening]);
+    if (mediaRecorderRef.current && mediaRecorderRef.current.state === 'recording') {
+      try {
+        mediaRecorderRef.current.stop();
+      } catch (e) {}
+    }
+    setSpeechState('idle');
+  }, []);
 
-  const speak = useCallback((text, languageCode = 'en-IN') => {
-    if (!('speechSynthesis' in window)) {
-      setSpeechError('Text-to-speech voice synthesis is not supported.');
-      return;
-    }
+  const speak = useCallback((text, localeCode = 'en-IN') => {
+    if (!('speechSynthesis' in window)) return;
 
     window.speechSynthesis.cancel();
-
     const utterance = new SpeechSynthesisUtterance(text);
-    utterance.lang = languageCode;
+    utterance.lang = localeCode;
 
     utterance.onstart = () => setIsSpeaking(true);
     utterance.onend = () => setIsSpeaking(false);
@@ -89,13 +160,16 @@ export function useWebSpeech() {
   }, []);
 
   return {
-    isListening,
+    speechState,
     speechError,
     isSpeaking,
     startListening,
     stopListening,
     speak,
     stopSpeaking,
-    clearError: () => setSpeechError(null)
+    clearError: () => {
+      setSpeechError(null);
+      setSpeechState('idle');
+    }
   };
 }

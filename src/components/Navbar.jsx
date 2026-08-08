@@ -4,7 +4,7 @@ export default function Navbar({ activeTab, setActiveTab }) {
   return (
     <header className="nav-header">
       <div className="nav-brand">
-        <span>CIVIC PULSE</span>
+        <span>MERA AWAAZ MERA ADHIKAR</span>
         <span className="brand-tag">v2.0 INR</span>
       </div>
       
