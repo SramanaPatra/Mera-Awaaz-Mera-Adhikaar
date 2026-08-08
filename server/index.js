@@ -1,5 +1,7 @@
 import express from 'express';
 import cors from 'cors';
+import path from 'path';
+import fs from 'fs';
 import authRoutes from './routes/auth.js';
 import welfareRoutes from './routes/welfare.js';
 import complaintsRoutes from './routes/complaints.js';
@@ -16,6 +18,11 @@ app.use(cors());
 app.use(express.json({ limit: '10mb' }));
 app.use(express.static('public'));
 
+const distPath = path.resolve('dist');
+if (fs.existsSync(distPath)) {
+  app.use(express.static(distPath));
+}
+
 app.use('/api/auth', authRoutes);
 app.use('/api/welfare', welfareRoutes);
 app.use('/api/complaints', complaintsRoutes);
@@ -27,6 +34,12 @@ app.use('/api/speech', speechRoutes);
 app.get('/api/health', (req, res) => {
   res.json({ status: 'HEALTHY', timestamp: new Date().toISOString() });
 });
+
+if (fs.existsSync(distPath)) {
+  app.get('*', (req, res) => {
+    res.sendFile(path.join(distPath, 'index.html'));
+  });
+}
 
 setInterval(() => {
   runEscalationCheck(48);
