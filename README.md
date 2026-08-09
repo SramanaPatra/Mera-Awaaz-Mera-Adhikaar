@@ -1,60 +1,80 @@
 # Mera Awaaz Mera Adhikar (v2.1.0)
-## Next-Gen Civic Welfare & Grievance Governance Platform
+## Next-Generation AI-Driven Civic Welfare & Grievance Governance Platform
 
 Mera Awaaz Mera Adhikar is a state-of-the-art civic empowerment web application integrating AI-driven welfare scheme recommendation matching, anonymous geolocation issue reporting, transparent public telemetry, and municipal authority SLA command.
 
 ---
 
+## Important Links
+
+- **GitHub Repository:** [https://github.com/SramanaPatra/Mera-Awaaz-Mera-Adhikaar.git](https://github.com/SramanaPatra/Mera-Awaaz-Mera-Adhikaar.git)
+- **Live Web Deployment:** [https://mera-awaaz-mera-adhikar.onrender.com](https://mera-awaaz-mera-adhikar.onrender.com)
+- **Google Drive (Presentation PPT & Demo Video):** [Insert Your Google Drive Link Here]
+
+---
+
+## Development Team
+
+- **Sramana Patra** (Project Lead & System Architecture)
+- **Baivabi Chakraborty** (Welfare Engine & PDF Exporter)
+- **Arunima Ghosh** (Multilingual Voice AI & SOS Telemetry)
+- **Debriddhi Ghosh** (Public Telemetry & Authority Command Portal)
+
+---
+
 ## Core Features & Architecture
 
-1. **Stitch 3D Glassmorphism UI & Video Background:**
-   - Responsive full-screen landscape video background (`bg.mp4`).
-   - Frosted glass cards (`.glass-card`, `.glass-panel`), 3D mouse perspective tilt interactions, and yellow accent glow halos (`.accent-glow`).
+1. **Role Selection & Account Security:**
+   - Account creation flow with explicit role selection (`Citizen Self-Service` vs `Authority Command Officer`).
+   - HMAC-SHA256 JWT security middleware protecting administrative governance APIs.
 
-2. **Secure Role-Based Authentication (Citizen vs. Authority):**
-   - Mandatory sign-in gate before accessing platform views.
-   - HMAC-SHA256 JWT authorization middleware for protected administrative APIs.
-   - Pre-filled credentials on sign-in screen post-logout.
+2. **Welfare Recommendation Engine & Math Rationale:**
+   - Evaluates citizen age, gender, income, location, and occupation against central and state schemes.
+   - Blank input initialization ensuring no pre-filled or fabricated recommendations until user submission.
+   - Expandable mathematical scoring rationale (*Income: 35/35 PTS, Jurisdiction: 35/35 PTS, Occupation: 30/30 PTS*).
 
-3. **Citizen Entitlements & PDF Exporter:**
-   - Verified Citizen Profile window displaying Aadhaar linkage, unique health ID, and linked document vault.
-   - 1-click **Export Entitlements Certificate (PDF)** generating printable official verification documents.
+3. **1-Click PDF Entitlement Certificate Exporter:**
+   - Generates official, QR-coded printable verification certificates for offline submission at government offices.
 
-4. **Welfare Recommendation Engine & Mathematical Rationale:**
-   - Matches citizen income, occupation, and municipal location against state schemes.
-   - Explanatory rationale cards displaying exact mathematical point breakdowns (*Income: 35/35 PTS, Jurisdiction: 35/35 PTS, Occupation: 30/30 PTS*).
+4. **Multilingual Voice AI (Ask Adhikar AI):**
+   - Integrated voice speech recognition and Text-to-Speech (TTS) synthesis across 6 Indian languages (Hindi, English, Marathi, Tamil, Telugu, Bengali).
+   - Automatic conversation window clearing when switching language selection.
 
-5. **Ask Adhikar AI Support Bot:**
-   - Multilingual voice recognition and speech synthesis across 6 Indian languages.
-   - Automatic message window clearing upon changing language selection.
+5. **Anonymous Geolocation Issue Reporting:**
+   - Anonymous grievance filing with satellite GPS coordinate binding and encrypted tracking hashes (e.g. `#0x8F92A47B`).
 
-6. **Public Grievance Telemetry & SLA Timeline:**
-   - Transparent public ledger with upvoting and location descriptors.
-   - Interactive 4-stage resolution SLA timeline (`LOGGED -> OFFICER REVIEW -> INSPECTION -> RESOLVED`).
+6. **Public Telemetry Ledger & 4-Stage SLA Stepper:**
+   - Transparent audit ledger featuring community upvoting and an interactive 4-stage resolution timeline (`LOGGED -> OFFICER REVIEW -> INSPECTION -> RESOLVED`).
 
-7. **Authority Command Portal & Data Visualizations:**
-   - Officer SLA dashboard with SVG resolution velocity charts and ward grievance density heatmaps.
+7. **Authority Command Portal & Data Analytics:**
+   - Database-connected officer portal featuring Ward-wise Grievance Density Heatmaps, Monthly Resolution Velocity Bar Charts, and live status resolution (`Resolve` / `Escalate`).
 
 8. **Progressive Web App (PWA) Offline Support:**
-   - `manifest.json` metadata and `sw.js` service worker caching static assets for offline rural connectivity.
+   - Web App Manifest (`manifest.json`) and Service Worker (`sw.js`) using a Network-First strategy for automatic updates without manual browser hard resets.
+
+9. **Persistent Server-Side File Storage:**
+   - Persistent JSON disk storage (`server/data/complaints.json` & `server/data/users.json`) guaranteeing 100% data retention across browser reloads and server restarts.
 
 ---
 
-## Tech Stack
+## Technology Stack
 
-- **Frontend:** React 18, Vite 5, TailwindCSS
-- **Backend:** Node.js, Express, JWT, Web Speech API
-- **Design System:** Vanilla CSS Glassmorphism, Material Symbols Outlined, Hanken Grotesk / Be Vietnam Pro Fonts
+- **Frontend:** React 18, Vite 5, TailwindCSS, Web Speech API
+- **Design System:** Stitch 3D Glassmorphism, Vanilla CSS backdrop blur, dynamic 3D perspective tilt interactions
+- **Backend:** Node.js, Express, HMAC-SHA256 JWT, JSON Disk Storage
+- **PWA:** Service Worker (`sw.js`), Web App Manifest (`manifest.json`)
 
 ---
 
-## Running Locally
+## Local Setup Instructions
 
 ```bash
+git clone https://github.com/SramanaPatra/Mera-Awaaz-Mera-Adhikaar.git
+cd Mera-Awaaz-Mera-Adhikaar
 npm install
-npm run dev
+npm run build
 npm run server
 ```
 
 - **Frontend Application:** `http://localhost:3000`
-- **Backend API:** `http://localhost:5000`
+- **Backend API Server:** `http://localhost:5000`
