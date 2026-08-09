@@ -21,6 +21,7 @@ export default function App() {
   const [location, setLocation] = useState('');
   const [income, setIncome] = useState('');
   const [occupation, setOccupation] = useState('Artisan');
+  const [department, setDepartment] = useState('Municipal Operations Command');
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -56,19 +57,6 @@ export default function App() {
     setCardTransform('perspective(1000px) rotateY(0deg) rotateX(0deg)');
   };
 
-  const handleDemoFill = (role) => {
-    setLoginRole(role);
-    setAuthMode('login');
-    setAuthError(null);
-    if (role === 'citizen') {
-      setEmail('citizen@adhikar.gov.in');
-      setPassword('citizen123');
-    } else {
-      setEmail('admin@adhikar.gov.in');
-      setPassword('admin123');
-    }
-  };
-
   const handleAuthSubmit = async (e) => {
     if (e) e.preventDefault();
     setLoading(true);
@@ -80,6 +68,7 @@ export default function App() {
       password,
       name,
       role: loginRole,
+      department: loginRole === 'authority' ? department : 'Citizen Self-Service',
       age,
       gender,
       location,
@@ -165,7 +154,7 @@ export default function App() {
 
               <div className="text-center mb-6 w-full">
                 <h1 className="font-headline-md text-headline-md text-on-surface mb-1 tracking-tight font-black uppercase">
-                  {authMode === 'register' ? 'Create Account' : loginRole === 'citizen' ? 'Citizen Access Portal' : 'Authority Command'}
+                  {authMode === 'register' ? 'Create Account' : 'Sign In Portal'}
                 </h1>
                 <p className="font-label-bold text-xs text-on-surface-variant font-bold">
                   Mera Awaaz Mera Adhikar - Secure Authentication
@@ -197,6 +186,34 @@ export default function App() {
               )}
 
               <form onSubmit={handleAuthSubmit} className="w-full flex flex-col gap-4">
+                {authMode === 'register' && (
+                  <div className="flex flex-col gap-1">
+                    <label className="font-label-bold text-xs text-on-surface uppercase font-bold">Account Role / Access Level</label>
+                    <select 
+                      className="input-glass w-full rounded-lg px-4 py-2.5 text-on-surface font-body-md shadow-inner font-bold text-sm cursor-pointer border border-white/40"
+                      value={loginRole}
+                      onChange={(e) => setLoginRole(e.target.value)}
+                    >
+                      <option value="citizen">Citizen Self-Service Account</option>
+                      <option value="authority">Authority Command Officer</option>
+                    </select>
+                  </div>
+                )}
+
+                {authMode === 'register' && loginRole === 'authority' && (
+                  <div className="flex flex-col gap-1">
+                    <label className="font-label-bold text-xs text-on-surface uppercase font-bold">Municipal Department Name</label>
+                    <input 
+                      type="text"
+                      className="input-glass w-full rounded-lg px-4 py-2.5 text-on-surface font-body-md shadow-inner font-bold text-sm"
+                      value={department}
+                      onChange={(e) => setDepartment(e.target.value)}
+                      placeholder="e.g. Municipal Operations Command"
+                      required
+                    />
+                  </div>
+                )}
+
                 {authMode === 'register' && (
                   <div className="flex flex-col gap-1">
                     <label className="font-label-bold text-xs text-on-surface uppercase font-bold">Full Legal Name</label>
@@ -327,28 +344,6 @@ export default function App() {
                   {loading ? 'PROCESSING...' : authMode === 'register' ? 'REGISTER ACCOUNT' : 'LOGIN TO PORTAL'}
                 </button>
               </form>
-
-              <div className="mt-6 flex flex-col items-center gap-2 border-t border-white/20 pt-4 w-full">
-                <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest font-mono">
-                  DEMO ACCOUNTS FOR INSTANT AUDIT
-                </p>
-                <div className="flex gap-2">
-                  <button 
-                    type="button" 
-                    onClick={() => handleDemoFill('citizen')}
-                    className="px-3 py-1 bg-white/50 border border-white/80 rounded-full text-xs font-bold text-on-surface hover:bg-white/80 transition-colors font-bold"
-                  >
-                    Citizen Demo
-                  </button>
-                  <button 
-                    type="button" 
-                    onClick={() => handleDemoFill('authority')}
-                    className="px-3 py-1 bg-white/50 border border-white/80 rounded-full text-xs font-bold text-on-surface hover:bg-white/80 transition-colors font-bold"
-                  >
-                    Authority Demo
-                  </button>
-                </div>
-              </div>
             </div>
           </main>
         </div>
