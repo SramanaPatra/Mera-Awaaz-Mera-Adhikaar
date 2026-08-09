@@ -11,7 +11,7 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('welfare');
   const [citizenSubView, setCitizenSubView] = useState('dashboard');
   const [loginRole, setLoginRole] = useState('citizen');
-  const [authMode, setAuthMode] = useState('login');
+  const [authMode, setAuthMode] = useState('register');
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -38,7 +38,10 @@ export default function App() {
         if (parsed.role === 'authority') {
           setActiveTab('admin');
         }
-      } catch (e) {}
+      } catch (e) {
+        localStorage.removeItem('adhikar_token');
+        localStorage.removeItem('adhikar_user');
+      }
     }
   }, []);
 
@@ -127,6 +130,7 @@ export default function App() {
     setEmail('');
     setPassword('');
     setAuthError(null);
+    setAuthMode('register');
   };
 
   return (
@@ -152,7 +156,7 @@ export default function App() {
         >
           <main className="relative z-10 w-full max-w-md px-margin-mobile md:px-0">
             <div 
-              className="glass-card rounded-xl p-8 flex flex-col items-center w-full"
+              className="glass-card rounded-xl p-8 flex flex-col items-center w-full shadow-2xl border-2 border-white/40"
               style={{ transform: cardTransform }}
             >
               <div className="w-24 h-24 mb-6 rounded-full overflow-hidden border-2 border-white/50 bg-white/20 p-2 shadow-sm flex items-center justify-center">
@@ -171,18 +175,18 @@ export default function App() {
               <div className="flex w-full bg-surface-container-high/50 rounded-lg p-1 mb-6 shadow-inner border border-white/20">
                 <button 
                   type="button"
-                  onClick={() => setAuthMode('login')}
-                  className={`flex-1 py-2 px-3 rounded-md font-label-bold text-xs flex items-center justify-center gap-1 transition-all font-black ${authMode === 'login' ? 'bg-secondary-container text-on-secondary-container shadow-sm' : 'text-on-surface-variant hover:bg-white/20'}`}
-                >
-                  Sign In
-                </button>
-
-                <button 
-                  type="button"
                   onClick={() => { setAuthMode('register'); setAuthError(null); }}
                   className={`flex-1 py-2 px-3 rounded-md font-label-bold text-xs flex items-center justify-center gap-1 transition-all font-black ${authMode === 'register' ? 'bg-secondary-container text-on-secondary-container shadow-sm' : 'text-on-surface-variant hover:bg-white/20'}`}
                 >
                   Create Account
+                </button>
+
+                <button 
+                  type="button"
+                  onClick={() => { setAuthMode('login'); setAuthError(null); }}
+                  className={`flex-1 py-2 px-3 rounded-md font-label-bold text-xs flex items-center justify-center gap-1 transition-all font-black ${authMode === 'login' ? 'bg-secondary-container text-on-secondary-container shadow-sm' : 'text-on-surface-variant hover:bg-white/20'}`}
+                >
+                  Sign In
                 </button>
               </div>
 
