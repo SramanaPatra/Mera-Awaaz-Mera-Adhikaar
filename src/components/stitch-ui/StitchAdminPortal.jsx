@@ -4,6 +4,8 @@ export default function StitchAdminPortal({ setActiveTab, user, onLogout }) {
   const [complaints, setComplaints] = useState([]);
   const [stats, setStats] = useState({ total: 0, pending: 0, resolved: 0, SLA: '98.4%' });
   const [selectedFilter, setSelectedFilter] = useState('ALL');
+  const [updatingId, setUpdatingId] = useState(null);
+  const [actionNotice, setActionNotice] = useState(null);
 
   useEffect(() => {
     fetchAdminData();
@@ -26,7 +28,9 @@ export default function StitchAdminPortal({ setActiveTab, user, onLogout }) {
     }
   };
 
-  const handleUpdateStatus = async (id, newStatus) => {
+  const handleUpdateStatus = async (id, newStatus, trackingRef) => {
+    setUpdatingId(id);
+    setActionNotice(null);
     try {
       const res = await fetch(`/api/admin/complaints/${id}/status`, {
         method: 'PATCH',
@@ -38,10 +42,14 @@ export default function StitchAdminPortal({ setActiveTab, user, onLogout }) {
       });
       const data = await res.json();
       if (data.success) {
-        fetchAdminData();
+        setActionNotice(`Grievance #${trackingRef || id} updated to ${newStatus}`);
+        setTimeout(() => setActionNotice(null), 3000);
+        await fetchAdminData();
       }
     } catch (err) {
       console.error(err);
+    } finally {
+      setUpdatingId(null);
     }
   };
 
@@ -78,6 +86,12 @@ export default function StitchAdminPortal({ setActiveTab, user, onLogout }) {
           </button>
         </div>
       </header>
+
+      {actionNotice && (
+        <div className="p-4 bg-emerald-300 text-emerald-950 rounded-xl font-mono text-xs font-black text-center border-2 border-white shadow-lg animate-bounce">
+          {actionNotice.toUpperCase()}
+        </div>
+      )}
 
       <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
         <div className="glass-panel p-6 rounded-xl border border-white/40 space-y-1 shadow-md">
@@ -179,35 +193,42 @@ export default function StitchAdminPortal({ setActiveTab, user, onLogout }) {
               </tr>
             </thead>
             <tbody className="divide-y divide-white/20 text-sm font-body-md">
-              {filteredComplaints.map(c => (
-                <tr key={c.id} className="hover:bg-white/20 transition-colors">
-                  <td className="py-4 px-4 font-mono font-black text-white text-glow-sm">#{c.tracking_hash || `CMP-${c.id}`}</td>
-                  <td className="py-4 px-4 font-black text-white text-glow-sm">{c.title}</td>
-                  <td className="py-4 px-4 font-bold text-slate-100 text-glow-sm">{c.category}</td>
-                  <td className="py-4 px-4 font-bold text-slate-100 text-glow-sm">{c.location_descriptor}</td>
-                  <td className="py-4 px-4">
-                    <span className={`px-3 py-1 rounded-full text-xs font-mono font-black ${c.status === 'Resolved' ? 'bg-emerald-300 text-emerald-950' : c.status === 'Escalated' ? 'bg-error text-white' : 'bg-amber-300 text-slate-950'}`}>
-                      {c.status}
-                    </span>
-                  </td>
-                  <td className="py-4 px-4 text-right">
-                    <div className="flex gap-2 justify-end">
-                      <button 
-                        onClick={() => handleUpdateStatus(c.id, 'Resolved')}
-                        className="px-3 py-1 bg-emerald-600 text-white rounded text-xs font-black hover:bg-emerald-700 shadow"
-                      >
-                        Resolve
-                      </button>
-                      <button 
-                        onClick={() => handleUpdateStatus(c.id, 'Escalated')}
-                        className="px-3 py-1 bg-error text-white rounded text-xs font-black hover:bg-red-700 shadow"
-                      >
-                        Escalate
-                      </button>
-                    </div>
-                  </td>
-                </tr>
-              ))}
+              {filteredComplaints.map(c => {
+                const trackingRef = c.tracking_hash || `CMP-${c.id}`;
+                const isItemUpdating = updatingId === c.id || updatingId === c.tracking_hash;
+
+                return (
+                  <tr key={c.id} className="hover:bg-white/20 transition-colors">
+                    <td className="py-4 px-4 font-mono font-black text-white text-glow-sm">#{trackingRef}</td>
+                    <td className="py-4 px-4 font-black text-white text-glow-sm">{c.title}</td>
+                    <td className="py-4 px-4 font-bold text-slate-100 text-glow-sm">{c.category}</td>
+                    <td className="py-4 px-4 font-bold text-slate-100 text-glow-sm">{c.location_descriptor || c.location_name}</td>
+                    <td className="py-4 px-4">
+                      <span className={`px-3 py-1 rounded-full text-xs font-mono font-black ${c.status === 'Resolved' ? 'bg-emerald-300 text-emerald-950' : c.status === 'Escalated' ? 'bg-error text-white' : 'bg-amber-300 text-slate-950'}`}>
+                        {c.status}
+                      </span>
+                    </td>
+                    <td className="py-4 px-4 text-right">
+                      <div className="flex gap-2 justify-end">
+                        <button 
+                          disabled={isItemUpdating}
+                          onClick={() => handleUpdateStatus(c.id, 'Resolved', trackingRef)}
+                          className="px-3 py-1 bg-emerald-600 text-white rounded text-xs font-black hover:bg-emerald-700 shadow disabled:opacity-50"
+                        >
+                          {isItemUpdating ? 'Updating...' : 'Resolve'}
+                        </button>
+                        <button 
+                          disabled={isItemUpdating}
+                          onClick={() => handleUpdateStatus(c.id, 'Escalated', trackingRef)}
+                          className="px-3 py-1 bg-error text-white rounded text-xs font-black hover:bg-red-700 shadow disabled:opacity-50"
+                        >
+                          {isItemUpdating ? 'Updating...' : 'Escalate'}
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                );
+              })}
             </tbody>
           </table>
         </div>

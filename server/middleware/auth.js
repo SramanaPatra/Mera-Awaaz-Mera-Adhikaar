@@ -9,6 +9,8 @@ export function signToken(payload) {
   return `${header}.${body}.${signature}`;
 }
 
+export const generateToken = signToken;
+
 export function decodeToken(token) {
   if (!token) return null;
   try {

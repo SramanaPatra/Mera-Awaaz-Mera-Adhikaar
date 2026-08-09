@@ -2,15 +2,17 @@ import React, { useState, useEffect, useRef } from 'react';
 import { useWebSpeech } from '../../hooks/useWebSpeech';
 
 export default function StitchCitizenDashboard({ activeTab, setActiveTab, user, onLogout, activeSubView = 'dashboard', setActiveSubView }) {
-  const [income, setIncome] = useState('350000');
-  const [location, setLocation] = useState('New Delhi, DL');
-  const [occupation, setOccupation] = useState('Artisan');
+  const [income, setIncome] = useState(user && user.income ? user.income : '');
+  const [location, setLocation] = useState(user && user.location ? user.location : '');
+  const [occupation, setOccupation] = useState(user && user.occupation ? user.occupation : '');
   const [customOccupation, setCustomOccupation] = useState('');
+  const [age, setAge] = useState(user && user.age ? user.age : '');
+  const [gender, setGender] = useState(user && user.gender ? user.gender : '');
   const [matches, setMatches] = useState([]);
   const [loading, setLoading] = useState(false);
   const [gpsStatus, setGpsStatus] = useState(null);
   const [selectedScheme, setSelectedScheme] = useState(null);
-  const [applicantName, setApplicantName] = useState('');
+  const [applicantName, setApplicantName] = useState(user ? user.name : '');
   const [applicationSuccess, setApplicationSuccess] = useState(false);
   const [activeRationaleId, setActiveRationaleId] = useState(null);
   const [showCertificateModal, setShowCertificateModal] = useState(false);
@@ -37,10 +39,6 @@ export default function StitchCitizenDashboard({ activeTab, setActiveTab, user, 
     speak,
     clearError
   } = useWebSpeech();
-
-  useEffect(() => {
-    handleSearch();
-  }, []);
 
   useEffect(() => {
     if (chatEndRef.current) {
@@ -82,7 +80,7 @@ export default function StitchCitizenDashboard({ activeTab, setActiveTab, user, 
   const getReadinessScore = () => {
     let score = 0;
     if (income && Number(income) > 0) score += 35;
-    if (location) score += 35;
+    if (location && location.trim()) score += 35;
     if (occupation === 'Other') {
       if (customOccupation.trim()) score += 30;
     } else if (occupation) {
@@ -125,6 +123,8 @@ export default function StitchCitizenDashboard({ activeTab, setActiveTab, user, 
 
   const handleSearch = async (e) => {
     if (e) e.preventDefault();
+    if (!income && !location && !occupation) return;
+
     setLoading(true);
     try {
       const res = await fetch('/api/welfare/match', {
@@ -134,7 +134,9 @@ export default function StitchCitizenDashboard({ activeTab, setActiveTab, user, 
           income,
           location,
           occupation,
-          customOccupation
+          customOccupation,
+          age: user ? user.age : age,
+          gender: user ? user.gender : gender
         })
       });
       const data = await res.json();
@@ -205,7 +207,7 @@ export default function StitchCitizenDashboard({ activeTab, setActiveTab, user, 
         body: JSON.stringify({
           message: query,
           conversationHistory: [...chatMessages, userMsg],
-          citizenProfile: { income, location, occupation, customOccupation },
+          citizenProfile: { income, location, occupation, customOccupation, age, gender },
           localeCode: selectedLocale
         })
       });
@@ -260,10 +262,10 @@ export default function StitchCitizenDashboard({ activeTab, setActiveTab, user, 
                       </span>
                     </div>
                     <p className="font-mono text-xs text-slate-100 font-bold text-glow-sm">
-                      CITIZEN ID: CIT-2026-8849 &bull; UNIQUE HEALTH ID: 9482-1049-3829
+                      CITIZEN ID: CIT-2026-{user ? user.id * 849 : 8849} &bull; AGE: {user && user.age ? user.age : '32'} &bull; GENDER: {user && user.gender ? user.gender : 'Male'}
                     </p>
                     <p className="text-sm font-bold text-slate-100 text-glow-sm">
-                      {user ? user.email : 'citizen@adhikar.gov.in'} &bull; Primary Location: {location}
+                      {user ? user.email : 'citizen@adhikar.gov.in'} &bull; Primary Location: {user && user.location ? user.location : location || 'Not Specified'}
                     </p>
                   </div>
                 </div>
@@ -288,15 +290,15 @@ export default function StitchCitizenDashboard({ activeTab, setActiveTab, user, 
                 <div className="space-y-3 text-sm font-bold">
                   <div className="flex justify-between border-b border-white/20 pb-2">
                     <span className="text-slate-100 text-glow-sm">Declared Annual Income:</span>
-                    <span className="font-mono text-white font-black text-glow-sm">₹ {Number(income).toLocaleString('en-IN')}</span>
+                    <span className="font-mono text-white font-black text-glow-sm">₹ {income ? Number(income).toLocaleString('en-IN') : '0'}</span>
                   </div>
                   <div className="flex justify-between border-b border-white/20 pb-2">
                     <span className="text-slate-100 text-glow-sm">Occupation Category:</span>
-                    <span className="text-white font-black text-glow-sm">{occupation === 'Other' ? customOccupation : occupation}</span>
+                    <span className="text-white font-black text-glow-sm">{occupation === 'Other' ? customOccupation : occupation || 'Not Specified'}</span>
                   </div>
                   <div className="flex justify-between border-b border-white/20 pb-2">
                     <span className="text-slate-100 text-glow-sm">Municipal Jurisdiction:</span>
-                    <span className="text-white font-black text-glow-sm">{location}</span>
+                    <span className="text-white font-black text-glow-sm">{location || 'Not Specified'}</span>
                   </div>
                   <div className="flex justify-between border-b border-white/20 pb-2">
                     <span className="text-slate-100 text-glow-sm">Direct Benefit Transfer (DBT):</span>
@@ -368,6 +370,7 @@ export default function StitchCitizenDashboard({ activeTab, setActiveTab, user, 
                           className="w-full bg-white/30 border-b-2 border-white/40 focus:border-secondary-container border-t-0 border-l-0 border-r-0 pl-4 pr-12 py-3 font-body-md outline-none transition-colors cursor-pointer group-hover:bg-white/40 rounded-t-lg text-slate-900 font-black truncate shadow-inner"
                           value={location}
                           onChange={(e) => setLocation(e.target.value)}
+                          placeholder="Type city/state or click target icon..."
                           required
                         />
                         <button 
@@ -392,7 +395,7 @@ export default function StitchCitizenDashboard({ activeTab, setActiveTab, user, 
                           className="w-full bg-white/30 border-b-2 border-white/40 focus:border-secondary-container border-t-0 border-l-0 border-r-0 pl-8 pr-4 py-3 font-body-md outline-none transition-colors rounded-t-lg text-slate-900 font-black shadow-inner"
                           value={income}
                           onChange={(e) => setIncome(e.target.value)}
-                          placeholder="350000"
+                          placeholder="Enter annual income in INR..."
                           required
                         />
                       </div>
@@ -471,30 +474,30 @@ export default function StitchCitizenDashboard({ activeTab, setActiveTab, user, 
                   <div>
                     <div className="flex justify-between font-label-bold text-label-bold text-white mb-1 text-glow-sm">
                       <span>Income Match</span>
-                      <span>100%</span>
+                      <span>{income ? '100%' : '0%'}</span>
                     </div>
                     <div className="h-2 w-full bg-white/30 rounded-full overflow-hidden">
-                      <div className="h-full bg-secondary-container w-full rounded-full"></div>
+                      <div className={`h-full bg-secondary-container transition-all ${income ? 'w-full' : 'w-0'}`}></div>
                     </div>
                   </div>
 
                   <div>
                     <div className="flex justify-between font-label-bold text-label-bold text-white mb-1 text-glow-sm">
                       <span>Location Scope</span>
-                      <span>80%</span>
+                      <span>{location ? '80%' : '0%'}</span>
                     </div>
                     <div className="h-2 w-full bg-white/30 rounded-full overflow-hidden">
-                      <div className="h-full bg-secondary-container w-4/5 rounded-full"></div>
+                      <div className={`h-full bg-secondary-container transition-all ${location ? 'w-4/5' : 'w-0'}`}></div>
                     </div>
                   </div>
 
                   <div>
                     <div className="flex justify-between font-label-bold text-label-bold text-white mb-1 text-glow-sm">
                       <span>Occupation Fit</span>
-                      <span>95%</span>
+                      <span>{occupation ? '95%' : '0%'}</span>
                     </div>
                     <div className="h-2 w-full bg-white/30 rounded-full overflow-hidden">
-                      <div className="h-full bg-secondary-container w-[95%] rounded-full"></div>
+                      <div className={`h-full bg-secondary-container transition-all ${occupation ? 'w-[95%]' : 'w-0'}`}></div>
                     </div>
                   </div>
 
@@ -517,7 +520,15 @@ export default function StitchCitizenDashboard({ activeTab, setActiveTab, user, 
                   Matched Schemes ({matches.length})
                 </h3>
 
-                {loading ? (
+                {matches.length === 0 ? (
+                  <div className="glass-panel rounded-xl p-8 text-center text-white space-y-3 border border-white/40">
+                    <span className="material-symbols-outlined text-4xl text-secondary-container">search_off</span>
+                    <h4 className="font-headline-md text-lg font-black uppercase text-glow-sm">No Recommendations Generated Yet</h4>
+                    <p className="font-body-md text-sm text-slate-100 font-bold max-w-md mx-auto text-glow-sm">
+                      Fill in your location, annual income, and occupation sector above, then click <strong className="text-secondary-container">Analyze Eligibility</strong> to evaluate state welfare schemes.
+                    </p>
+                  </div>
+                ) : loading ? (
                   <div className="space-y-4">
                     {[1, 2].map(i => (
                       <div key={i} className="glass-panel rounded-xl p-6 h-36 animate-pulse"></div>
@@ -741,11 +752,11 @@ export default function StitchCitizenDashboard({ activeTab, setActiveTab, user, 
               </div>
               <div>
                 <span className="text-slate-500 block">CITIZEN ID</span>
-                <span className="text-slate-950 font-black text-sm">CIT-2026-8849</span>
+                <span className="text-slate-950 font-black text-sm">CIT-2026-{user ? user.id * 849 : 8849}</span>
               </div>
               <div>
                 <span className="text-slate-500 block">DECLARED INCOME</span>
-                <span className="text-slate-950 font-black text-sm">₹ {Number(income).toLocaleString('en-IN')}</span>
+                <span className="text-slate-950 font-black text-sm">₹ {income ? Number(income).toLocaleString('en-IN') : '0'}</span>
               </div>
               <div>
                 <span className="text-slate-500 block">DIRECT BENEFIT TRANSFER</span>
@@ -756,9 +767,9 @@ export default function StitchCitizenDashboard({ activeTab, setActiveTab, user, 
             <div className="space-y-2">
               <h4 className="font-black text-xs uppercase tracking-wider text-slate-700">VERIFIED WELFARE SCHEMES</h4>
               <ul className="list-disc pl-5 text-xs font-bold space-y-1">
-                <li>PM Vishwakarma Toolkit Grant &amp; Credit Subsidy (100% Match)</li>
-                <li>PM Krishi Sinchayee Yojana Water Infrastructure Scheme (90% Match)</li>
-                <li>Atal Pension Yojana Retired Worker Security Fund (85% Match)</li>
+                <li>PM Vishwakarma Toolkit Grant &amp; Credit Subsidy</li>
+                <li>PM Krishi Sinchayee Yojana Water Infrastructure Scheme</li>
+                <li>Atal Pension Yojana Retired Worker Security Fund</li>
               </ul>
             </div>
 

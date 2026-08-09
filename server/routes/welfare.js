@@ -12,15 +12,15 @@ router.get('/schemes', (req, res) => {
 });
 
 router.post('/match', (req, res) => {
-  const { income, location, occupation, customOccupation } = req.body;
-  if (!income) {
+  const { income, location, occupation, customOccupation, age, gender } = req.body;
+  if (!income && !location && !occupation) {
     return res.status(400).json({
       success: false,
-      message: 'Income criteria required for algorithmic evaluation'
+      message: 'Citizen profile data required for algorithmic evaluation'
     });
   }
 
-  const matches = findMatchingSchemes(income, location, occupation, customOccupation);
+  const matches = findMatchingSchemes(income, location, occupation, customOccupation, age, gender);
   res.json({
     success: true,
     count: matches.length,

@@ -1,95 +1,170 @@
 import express from 'express';
-import { signToken, decodeToken } from '../middleware/auth.js';
+import fs from 'fs';
+import path from 'path';
+import { generateToken } from '../middleware/auth.js';
 
 const router = express.Router();
+const DATA_DIR = path.resolve('server/data');
+const USERS_FILE = path.join(DATA_DIR, 'users.json');
 
-const DEMO_USERS = [
-  {
-    id: 'usr-cit-101',
-    email: 'citizen@adhikar.gov.in',
-    password: 'citizen123',
-    name: 'Verified Citizen User',
-    role: 'citizen'
-  },
-  {
-    id: 'usr-adm-501',
-    email: 'admin@adhikar.gov.in',
-    password: 'admin123',
-    name: 'Municipal Executive Officer',
-    role: 'authority',
-    department: 'Central Municipal Governance'
-  },
-  {
-    id: 'usr-adm-502',
-    email: 'officer@adhikar.gov.in',
-    password: 'officer123',
-    name: 'Chief Grievance Inspector',
-    role: 'authority',
-    department: 'Civic SLA Audit Bureau'
-  }
-];
-
-router.post('/login', (req, res) => {
-  const { email, password, requestedRole } = req.body;
-
-  if (!email || !email.trim()) {
-    return res.status(400).json({ success: false, message: 'Email address required' });
-  }
-
-  const normalizedEmail = email.toLowerCase().trim();
-  const effectiveRole = requestedRole || (normalizedEmail.includes('admin') || normalizedEmail.includes('officer') ? 'authority' : 'citizen');
-
-  let user = DEMO_USERS.find(u => u.email.toLowerCase() === normalizedEmail);
-
-  if (!user) {
-    user = {
-      id: `usr-${Date.now()}`,
-      email: normalizedEmail,
-      password: password || 'citizen123',
-      name: effectiveRole === 'authority' ? 'Municipal Authority Officer' : 'Verified Citizen User',
-      role: effectiveRole,
-      department: effectiveRole === 'authority' ? 'Civic Governance' : 'Citizen Services'
-    };
-    DEMO_USERS.push(user);
-  } else {
-    if (password && password.trim()) {
-      user.password = password;
+const loadUsersFromDisk = () => {
+  try {
+    if (fs.existsSync(USERS_FILE)) {
+      const raw = fs.readFileSync(USERS_FILE, 'utf-8');
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed)) return parsed;
     }
-    user.role = effectiveRole;
+  } catch (e) {}
+
+  return [
+    {
+      id: 1,
+      email: 'citizen@adhikar.gov.in',
+      password: 'citizen123',
+      name: 'Verified Citizen User',
+      role: 'citizen',
+      department: 'Public Affairs',
+      age: 32,
+      gender: 'Male',
+      location: 'New Delhi, DL',
+      income: '350000',
+      occupation: 'Artisan'
+    },
+    {
+      id: 2,
+      email: 'admin@adhikar.gov.in',
+      password: 'admin123',
+      name: 'Officer S. Patra',
+      role: 'authority',
+      department: 'Municipal Operations Command',
+      age: 45,
+      gender: 'Female',
+      location: 'New Delhi, DL',
+      income: '1200000',
+      occupation: 'Government Executive'
+    }
+  ];
+};
+
+let users = loadUsersFromDisk();
+
+const saveUsersToDisk = () => {
+  try {
+    if (!fs.existsSync(DATA_DIR)) {
+      fs.mkdirSync(DATA_DIR, { recursive: true });
+    }
+    fs.writeFileSync(USERS_FILE, JSON.stringify(users, null, 2));
+  } catch (e) {}
+};
+
+router.post('/register', (req, res) => {
+  const { email, password, name, role, age, gender, location, income, occupation, department } = req.body;
+
+  if (!email || !password || !name) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email, password, and full legal name are required'
+    });
   }
 
-  const tokenPayload = {
-    id: user.id,
-    email: user.email,
-    name: user.name,
-    role: user.role,
-    department: user.department || 'Citizen Services'
+  const existing = users.find(u => u.email.toLowerCase() === email.toLowerCase());
+  if (existing) {
+    return res.status(400).json({
+      success: false,
+      message: 'An account with this email address already exists. Please login instead.'
+    });
+  }
+
+  const newUser = {
+    id: users.length + 1,
+    email: email.toLowerCase(),
+    password,
+    name,
+    role: role || 'citizen',
+    department: department || (role === 'authority' ? 'Municipal Operations' : 'Citizen Self-Service'),
+    age: Number(age) || 30,
+    gender: gender || 'All',
+    location: location || 'Verified Jurisdiction',
+    income: String(income || '300000'),
+    occupation: occupation || 'General'
   };
 
-  const token = signToken(tokenPayload);
+  users.push(newUser);
+  saveUsersToDisk();
+
+  const token = generateToken(newUser);
 
   res.json({
     success: true,
-    message: 'Authentication successful',
+    message: 'User account created successfully',
     token,
-    user: tokenPayload
+    user: {
+      id: newUser.id,
+      email: newUser.email,
+      name: newUser.name,
+      role: newUser.role,
+      department: newUser.department,
+      age: newUser.age,
+      gender: newUser.gender,
+      location: newUser.location,
+      income: newUser.income,
+      occupation: newUser.occupation
+    }
+  });
+});
+
+router.post('/login', (req, res) => {
+  const { email, password } = req.body;
+
+  if (!email || !password) {
+    return res.status(400).json({
+      success: false,
+      message: 'Email and password are required'
+    });
+  }
+
+  const cleanEmail = email.toLowerCase().trim();
+  const user = users.find(u => u.email.toLowerCase() === cleanEmail);
+
+  if (!user) {
+    return res.status(404).json({
+      success: false,
+      message: 'Account not found. Please click Create Account to register.'
+    });
+  }
+
+  if (user.password !== password) {
+    return res.status(401).json({
+      success: false,
+      message: 'Incorrect security passcode. Please check your password.'
+    });
+  }
+
+  const token = generateToken(user);
+
+  res.json({
+    success: true,
+    token,
+    user: {
+      id: user.id,
+      email: user.email,
+      name: user.name,
+      role: user.role,
+      department: user.department,
+      age: user.age,
+      gender: user.gender,
+      location: user.location,
+      income: user.income,
+      occupation: user.occupation
+    }
   });
 });
 
 router.get('/me', (req, res) => {
-  const authHeader = req.headers.authorization;
-  if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return res.status(401).json({ success: false, message: 'Unauthenticated' });
-  }
-
-  const token = authHeader.split(' ')[1];
-  const payload = decodeToken(token);
-
-  if (!payload) {
-    return res.status(401).json({ success: false, message: 'Invalid session' });
-  }
-
-  res.json({ success: true, user: payload });
+  res.json({
+    success: true,
+    user: req.user || null
+  });
 });
 
 export default router;

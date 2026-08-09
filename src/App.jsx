@@ -11,8 +11,16 @@ export default function App() {
   const [activeTab, setActiveTab] = useState('welfare');
   const [citizenSubView, setCitizenSubView] = useState('dashboard');
   const [loginRole, setLoginRole] = useState('citizen');
-  const [email, setEmail] = useState('citizen@adhikar.gov.in');
-  const [password, setPassword] = useState('citizen123');
+  const [authMode, setAuthMode] = useState('login');
+
+  const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
+  const [name, setName] = useState('');
+  const [age, setAge] = useState('');
+  const [gender, setGender] = useState('Male');
+  const [location, setLocation] = useState('');
+  const [income, setIncome] = useState('');
+  const [occupation, setOccupation] = useState('Artisan');
   const [showPassword, setShowPassword] = useState(false);
   const [authError, setAuthError] = useState(null);
   const [loading, setLoading] = useState(false);
@@ -21,19 +29,6 @@ export default function App() {
   useEffect(() => {
     const savedToken = localStorage.getItem('adhikar_token');
     const savedUser = localStorage.getItem('adhikar_user');
-    const lastEmail = localStorage.getItem('adhikar_last_email');
-    const lastRole = localStorage.getItem('adhikar_last_role');
-
-    if (lastEmail) {
-      setEmail(lastEmail);
-      if (lastEmail.includes('admin') || lastRole === 'authority') {
-        setPassword('admin123');
-        setLoginRole('authority');
-      } else {
-        setPassword('citizen123');
-        setLoginRole('citizen');
-      }
-    }
 
     if (savedToken && savedUser) {
       try {
@@ -60,6 +55,7 @@ export default function App() {
 
   const handleDemoFill = (role) => {
     setLoginRole(role);
+    setAuthMode('login');
     setAuthError(null);
     if (role === 'citizen') {
       setEmail('citizen@adhikar.gov.in');
@@ -70,20 +66,32 @@ export default function App() {
     }
   };
 
-  const handleLoginSubmit = async (e) => {
+  const handleAuthSubmit = async (e) => {
     if (e) e.preventDefault();
     setLoading(true);
     setAuthError(null);
 
+    const endpoint = authMode === 'register' ? '/api/auth/register' : '/api/auth/login';
+    const payload = authMode === 'register' ? {
+      email,
+      password,
+      name,
+      role: loginRole,
+      age,
+      gender,
+      location,
+      income,
+      occupation
+    } : {
+      email,
+      password
+    };
+
     try {
-      const res = await fetch('/api/auth/login', {
+      const res = await fetch(endpoint, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          email: email || 'citizen@adhikar.gov.in',
-          password: password || 'citizen123',
-          requestedRole: loginRole
-        })
+        body: JSON.stringify(payload)
       });
 
       const data = await res.json();
@@ -95,8 +103,6 @@ export default function App() {
       setUser(data.user);
       localStorage.setItem('adhikar_token', data.token);
       localStorage.setItem('adhikar_user', JSON.stringify(data.user));
-      localStorage.setItem('adhikar_last_email', data.user.email);
-      localStorage.setItem('adhikar_last_role', data.user.role);
 
       if (data.user.role === 'authority') {
         setActiveTab('admin');
@@ -118,12 +124,9 @@ export default function App() {
     localStorage.removeItem('adhikar_user');
     setActiveTab('welfare');
     setCitizenSubView('dashboard');
-
-    const lastEmail = localStorage.getItem('adhikar_last_email') || 'citizen@adhikar.gov.in';
-    const lastRole = localStorage.getItem('adhikar_last_role') || 'citizen';
-    setEmail(lastEmail);
-    setLoginRole(lastRole);
-    setPassword(lastRole === 'authority' ? 'admin123' : 'citizen123');
+    setEmail('');
+    setPassword('');
+    setAuthError(null);
   };
 
   return (
@@ -145,7 +148,7 @@ export default function App() {
         <div 
           onMouseMove={handleMouseMove}
           onMouseLeave={handleMouseLeave}
-          className="bg-transparent text-on-background font-body-md min-h-screen flex items-center justify-center relative overflow-hidden p-4"
+          className="bg-transparent text-on-background font-body-md min-h-screen flex items-center justify-center relative overflow-hidden p-4 py-12"
         >
           <main className="relative z-10 w-full max-w-md px-margin-mobile md:px-0">
             <div 
@@ -156,32 +159,30 @@ export default function App() {
                 <img src="/profile-shield-emblem.jpg" alt="Citizen Profile Shield Emblem" className="w-full h-full object-cover rounded-full" />
               </div>
 
-              <div className="text-center mb-8 w-full">
-                <h1 className="font-headline-md text-headline-md text-on-surface mb-2 tracking-tight font-black uppercase">
-                  {loginRole === 'citizen' ? 'Citizen Access Portal' : 'Authority Command'}
+              <div className="text-center mb-6 w-full">
+                <h1 className="font-headline-md text-headline-md text-on-surface mb-1 tracking-tight font-black uppercase">
+                  {authMode === 'register' ? 'Create Account' : loginRole === 'citizen' ? 'Citizen Access Portal' : 'Authority Command'}
                 </h1>
-                <p className="font-label-bold text-label-bold text-on-surface-variant font-bold">
+                <p className="font-label-bold text-xs text-on-surface-variant font-bold">
                   Mera Awaaz Mera Adhikar - Secure Authentication
                 </p>
               </div>
 
-              <div className="flex w-full bg-surface-container-high/50 rounded-lg p-1 mb-8 shadow-inner border border-white/20">
+              <div className="flex w-full bg-surface-container-high/50 rounded-lg p-1 mb-6 shadow-inner border border-white/20">
                 <button 
                   type="button"
-                  onClick={() => handleDemoFill('citizen')}
-                  className={`flex-1 py-2 px-4 rounded-md font-label-bold text-label-bold flex items-center justify-center gap-2 transition-all font-black ${loginRole === 'citizen' ? 'bg-secondary-container text-on-secondary-container shadow-sm' : 'text-on-surface-variant hover:bg-white/20'}`}
+                  onClick={() => setAuthMode('login')}
+                  className={`flex-1 py-2 px-3 rounded-md font-label-bold text-xs flex items-center justify-center gap-1 transition-all font-black ${authMode === 'login' ? 'bg-secondary-container text-on-secondary-container shadow-sm' : 'text-on-surface-variant hover:bg-white/20'}`}
                 >
-                  <span className="material-symbols-outlined text-[18px]">person</span>
-                  Citizen Login
+                  Sign In
                 </button>
 
                 <button 
                   type="button"
-                  onClick={() => handleDemoFill('authority')}
-                  className={`flex-1 py-2 px-4 rounded-md font-label-bold text-label-bold flex items-center justify-center gap-2 transition-all font-black ${loginRole === 'authority' ? 'bg-primary text-white shadow-sm' : 'text-on-surface-variant hover:bg-white/20'}`}
+                  onClick={() => { setAuthMode('register'); setAuthError(null); }}
+                  className={`flex-1 py-2 px-3 rounded-md font-label-bold text-xs flex items-center justify-center gap-1 transition-all font-black ${authMode === 'register' ? 'bg-secondary-container text-on-secondary-container shadow-sm' : 'text-on-surface-variant hover:bg-white/20'}`}
                 >
-                  <span className="material-symbols-outlined text-[18px]">admin_panel_settings</span>
-                  Authority Command
+                  Create Account
                 </button>
               </div>
 
@@ -191,32 +192,42 @@ export default function App() {
                 </div>
               )}
 
-              <form onSubmit={handleLoginSubmit} className="w-full flex flex-col gap-5">
+              <form onSubmit={handleAuthSubmit} className="w-full flex flex-col gap-4">
+                {authMode === 'register' && (
+                  <div className="flex flex-col gap-1">
+                    <label className="font-label-bold text-xs text-on-surface uppercase font-bold">Full Legal Name</label>
+                    <input 
+                      type="text"
+                      className="input-glass w-full rounded-lg px-4 py-2.5 text-on-surface font-body-md shadow-inner font-bold text-sm"
+                      value={name}
+                      onChange={(e) => setName(e.target.value)}
+                      placeholder="Enter full name"
+                      required
+                    />
+                  </div>
+                )}
+
                 <div className="flex flex-col gap-1">
-                  <label className="font-label-bold text-label-bold text-on-surface uppercase tracking-wider ml-1 text-xs font-bold">
-                    {loginRole === 'citizen' ? 'Citizen Email Address' : 'Authority Officer ID'}
-                  </label>
+                  <label className="font-label-bold text-xs text-on-surface uppercase font-bold">Email Address</label>
                   <input 
                     type="email"
-                    className="input-glass w-full rounded-lg px-4 py-3 text-on-surface font-body-md placeholder:text-on-surface-variant/60 shadow-inner font-bold"
+                    className="input-glass w-full rounded-lg px-4 py-2.5 text-on-surface font-body-md shadow-inner font-bold text-sm"
                     value={email}
                     onChange={(e) => setEmail(e.target.value)}
-                    placeholder={loginRole === 'citizen' ? 'citizen@adhikar.gov.in' : 'admin@adhikar.gov.in'}
+                    placeholder="Enter email address"
                     required
                   />
                 </div>
 
                 <div className="flex flex-col gap-1">
-                  <label className="font-label-bold text-label-bold text-on-surface uppercase tracking-wider ml-1 text-xs font-bold">
-                    Security Access Code
-                  </label>
+                  <label className="font-label-bold text-xs text-on-surface uppercase font-bold">Security Passcode</label>
                   <div className="relative">
                     <input 
                       type={showPassword ? 'text' : 'password'}
-                      className="input-glass w-full rounded-lg px-4 py-3 text-on-surface font-body-md placeholder:text-on-surface-variant/60 shadow-inner pr-10 font-bold"
+                      className="input-glass w-full rounded-lg px-4 py-2.5 text-on-surface font-body-md shadow-inner pr-10 font-bold text-sm"
                       value={password}
                       onChange={(e) => setPassword(e.target.value)}
-                      placeholder="Enter security passcode..."
+                      placeholder="Enter password..."
                       required
                     />
                     <button 
@@ -224,32 +235,98 @@ export default function App() {
                       onClick={() => setShowPassword(!showPassword)}
                       className="absolute right-3 top-1/2 -translate-y-1/2 text-on-surface-variant hover:text-primary transition-colors"
                     >
-                      <span className="material-symbols-outlined text-xl">
+                      <span className="material-symbols-outlined text-lg">
                         {showPassword ? 'visibility' : 'visibility_off'}
                       </span>
                     </button>
                   </div>
                 </div>
 
+                {authMode === 'register' && (
+                  <>
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1">
+                        <label className="font-label-bold text-xs text-on-surface uppercase font-bold">Age</label>
+                        <input 
+                          type="number"
+                          className="input-glass w-full rounded-lg px-3 py-2 text-on-surface font-body-md shadow-inner font-bold text-sm"
+                          value={age}
+                          onChange={(e) => setAge(e.target.value)}
+                          placeholder="32"
+                          required
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <label className="font-label-bold text-xs text-on-surface uppercase font-bold">Gender</label>
+                        <select 
+                          className="input-glass w-full rounded-lg px-3 py-2 text-on-surface font-body-md shadow-inner font-bold text-sm cursor-pointer"
+                          value={gender}
+                          onChange={(e) => setGender(e.target.value)}
+                        >
+                          <option value="Male">Male</option>
+                          <option value="Female">Female</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    <div className="flex flex-col gap-1">
+                      <label className="font-label-bold text-xs text-on-surface uppercase font-bold">Primary Location</label>
+                      <input 
+                        type="text"
+                        className="input-glass w-full rounded-lg px-4 py-2.5 text-on-surface font-body-md shadow-inner font-bold text-sm"
+                        value={location}
+                        onChange={(e) => setLocation(e.target.value)}
+                        placeholder="e.g. New Delhi, DL"
+                        required
+                      />
+                    </div>
+
+                    <div className="grid grid-cols-2 gap-3">
+                      <div className="flex flex-col gap-1">
+                        <label className="font-label-bold text-xs text-on-surface uppercase font-bold">Annual Income (₹)</label>
+                        <input 
+                          type="number"
+                          className="input-glass w-full rounded-lg px-3 py-2 text-on-surface font-body-md shadow-inner font-bold text-sm"
+                          value={income}
+                          onChange={(e) => setIncome(e.target.value)}
+                          placeholder="350000"
+                          required
+                        />
+                      </div>
+
+                      <div className="flex flex-col gap-1">
+                        <label className="font-label-bold text-xs text-on-surface uppercase font-bold">Occupation</label>
+                        <select 
+                          className="input-glass w-full rounded-lg px-3 py-2 text-on-surface font-body-md shadow-inner font-bold text-sm cursor-pointer"
+                          value={occupation}
+                          onChange={(e) => setOccupation(e.target.value)}
+                        >
+                          <option value="Artisan">Artisan</option>
+                          <option value="Farmer">Farmer</option>
+                          <option value="Transport">Transport</option>
+                          <option value="Entrepreneur">Entrepreneur</option>
+                          <option value="Retired">Retired</option>
+                          <option value="Other">Other</option>
+                        </select>
+                      </div>
+                    </div>
+                  </>
+                )}
+
                 <button 
                   type="submit"
                   disabled={loading}
-                  className="w-full bg-secondary-container text-on-secondary-container font-label-bold text-label-bold py-4 rounded-lg mt-4 accent-glow hover:-translate-y-1 transition-all duration-300 uppercase tracking-widest shadow-lg font-black"
+                  className="w-full bg-secondary-container text-on-secondary-container font-label-bold text-label-bold py-3 rounded-lg mt-2 accent-glow hover:-translate-y-0.5 transition-all duration-300 uppercase tracking-widest shadow-lg font-black"
                 >
-                  {loading ? 'AUTHENTICATING SESSION...' : 'LOGIN TO PORTAL'}
+                  {loading ? 'PROCESSING...' : authMode === 'register' ? 'REGISTER ACCOUNT' : 'LOGIN TO PORTAL'}
                 </button>
               </form>
 
-              <div className="w-full flex flex-col items-center mt-8 gap-3 border-t border-white/20 pt-6">
-                <span className="font-label-bold text-label-bold text-on-surface-variant flex items-center gap-1 hover:text-primary transition-colors text-xs font-bold">
-                  <span className="material-symbols-outlined text-[16px]">shield</span>
-                  Encrypted Role-Based Security System
-                </span>
-              </div>
-
-              <div className="mt-6 flex flex-col items-center gap-2">
+              <div className="mt-6 flex flex-col items-center gap-2 border-t border-white/20 pt-4 w-full">
                 <p className="text-[10px] uppercase font-bold text-on-surface-variant tracking-widest font-mono">
-                  DEMO PRESETS FOR INSTANT AUDIT
+                  DEMO ACCOUNTS FOR INSTANT AUDIT
                 </p>
                 <div className="flex gap-2">
                   <button 
