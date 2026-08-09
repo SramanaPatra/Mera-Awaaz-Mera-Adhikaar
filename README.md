@@ -7,9 +7,9 @@ Mera Awaaz Mera Adhikar is a state-of-the-art civic empowerment web application 
 
 ## Important Links
 
-- **GitHub Repository:** [https://github.com/SramanaPatra/Mera-Awaaz-Mera-Adhikaar.git](https://github.com/SramanaPatra/Mera-Awaaz-Mera-Adhikaar.git)
-- **Live Web Deployment:** [https://mera-awaaz-mera-adhikar.onrender.com](https://mera-awaaz-mera-adhikar.onrender.com)
-- **Google Drive (Presentation PPT & Demo Video):** [Insert Your Google Drive Link Here]
+- **GitHub Repository:** [https://github.com/SramanaPatra/Mera-Awaaz-Mera-Adhikaar](https://github.com/SramanaPatra/Mera-Awaaz-Mera-Adhikaar)
+- **Live Web Deployment:** [https://mera-awaaz-mera-adhikaar.onrender.com](https://mera-awaaz-mera-adhikaar.onrender.com)
+- **Google Drive (Presentation PPT & Demo Video):** [https://drive.google.com/drive/folders/1hGT2hKgqoVoRaRTzpDKTpcNbWOv0e0dV?usp=sharing](https://drive.google.com/drive/folders/1hGT2hKgqoVoRaRTzpDKTpcNbWOv0e0dV?usp=sharing)
 
 ---
 
